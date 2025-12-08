@@ -151,8 +151,10 @@ class DivScalar(TensorOp):
 
 
 def divide_scalar(a, scalar):
-    return DivScalar(scalar)(a)
-
+    #return DivScalar(scalar)(a) 日历仙人， 首先， 继承了__call__, 真离谱，DivScalar(scalar)返回op对象
+    op = DivScalar(scalar)
+    #由于继承了__call__, 这里直接调用op对象就行了
+    return op(a)
 
 class Transpose(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
@@ -163,8 +165,11 @@ class Transpose(TensorOp):
         if self.axes is None:
             axe = tuple(range(len(a.shape) - 2)) + (len(a.shape) - 1, len(a.shape) - 2)
         else:
-            axe = list(range(len(a.shape)))
-            axe[self.axes[0]], axe[self.axes[1]] = axe[???]
+            axe = self.axes
+            return array_api.transpose(a, axes = axe)
+        return array_api.transpose(a, axes = axe)
+
+            
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
@@ -188,7 +193,8 @@ class Reshape(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return reshape(out_grad, node.inputs[0].shape)
+        old_shape = node.inputs[0].shape
+        return reshape(out_grad, old_shape)
         ### END YOUR SOLUTION
 
 
@@ -218,9 +224,7 @@ class BroadcastTo(TensorOp):
                 axes.append(i)
         grad = summation(out_grad, axes = tuple(axes))
         grad = reshape(grad, node.inputs[0].shape)
-        ### BEGIN YOUR SOLUTION
         return grad
-        ### END YOUR SOLUTION
 
 
 def broadcast_to(a, shape):

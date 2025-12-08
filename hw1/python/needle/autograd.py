@@ -20,9 +20,12 @@ NDArray = numpy.ndarray
 
 class Op:
     """Operator definition."""
+    def __init__(self):
+        #do nothing
+        pass
 
     def __call__(self, *args):
-        raise NotImplementedError()
+        return self.compute(*args)
 
     def compute(self, *args: Tuple[NDArray]):
         """Calculate forward pass of operator.
@@ -38,6 +41,7 @@ class Op:
             Array output of the operation
 
         """
+        #implement, 这是一个抽象类，后面要实现的
         raise NotImplementedError()
 
     def gradient(
