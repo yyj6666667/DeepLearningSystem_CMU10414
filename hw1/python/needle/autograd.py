@@ -399,15 +399,27 @@ def compute_gradient_of_variables(self_tensor, out_grad):
     ### BEGIN YOUR SOLUTION
     for node in reverse_topo_order:               #一次就做完了，不需要递归
         node.grad = sum_node_list(node_to_output_grads_list[node])
-        for input_node in node.inputs:
-            if node.inputs is None:
-                continue
-            v_k_to_i = node.op.gradient(node.grad, node)
+        #for input_node in node.inputs:
+        #    if node.inputs is None:
+        #        continue
+        #    v_k_to_i = node.op.gradient(node.grad, node)
+        #    if input_node not in node_to_output_grads_list:
+        #        node_to_output_grads_list[input_node] = [node]
+        #    node_to_output_grads_list[input_node].extend(v_k_to_i)
+        if node.op is None:  # 如果是叶子节点，跳过
+            continue
+        # 计算所有输入的梯度（可能返回单个 Tensor 或 tuple of Tensors）
+        input_grads = node.op.gradient(node.grad, node)
+        # 确保 input_grads 是 tuple 格式
+        if not isinstance(input_grads, tuple):
+            input_grads = (input_grads,)
+        # 将梯度分配给对应的输入节点
+        for input_node, input_grad in zip(node.inputs, 
+        input_grads):
             if input_node not in node_to_output_grads_list:
                 node_to_output_grads_list[input_node] = []
-            node_to_output_grads_list[input_node].append(v_k_to_i)
     ### END YOUR SOLUTION
-
+            node_to_output_grads_list[input_node].append(input_grad)
 
 def find_topo_sort(node_list: List[Value]) -> List[Value]:
     """Given a list of nodes, return a topological sort list of nodes ending in them.
