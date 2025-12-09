@@ -110,6 +110,15 @@ class Value:
         self.cached_data = self.op.compute(
             *[x.realize_cached_data() for x in self.inputs]
         )
+        #debug ： 添加类型检查和扁平化处理
+        #else :
+        #    buf_inputs = []
+        #    for x in self.inputs:
+        #        if isinstance(x, tuple) or isinstance(x, list):
+        #            buf_inputs.extend(x)
+        #        else:
+        #            buf_inputs.append(x)
+        #   self.cached_data = self.op.compute(*[item.realize_cached_data() for item in buf_inputs])
         return self.cached_data
 
 
@@ -372,7 +381,7 @@ class Tensor(Value):
     __rmatmul__ = __matmul__
 
 
-def compute_gradient_of_variables(output_tensor, out_grad):
+def compute_gradient_of_variables(self_tensor, out_grad):
     """Take gradient of output node with respect to each node in node_list.
 
     Store the computed result in the grad field of each Variable.
@@ -382,10 +391,10 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     # Special note on initializing gradient of
     # We are really taking a derivative of the scalar reduce_sum(output_node)
     # instead of the vector output_node. But this is the common case for loss function.
-    node_to_output_grads_list[output_tensor] = [out_grad]
+    node_to_output_grads_list[self_tensor] = [out_grad]
 
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
-    reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
+    reverse_topo_order = list(reversed(find_topo_sort([self_tensor])))
 
     ### BEGIN YOUR SOLUTION
     for node in reverse_topo_order:               #一次就做完了，不需要递归
