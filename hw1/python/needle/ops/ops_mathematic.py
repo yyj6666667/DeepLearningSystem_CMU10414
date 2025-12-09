@@ -146,7 +146,7 @@ class DivScalar(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return 1 / self.scalar * out_grad
+        return 1 / self.scalar 
         ### END YOUR SOLUTION
 
 
@@ -163,13 +163,14 @@ class Transpose(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
         if self.axes is None:
+            # Swap last two dimensions
             axe = tuple(range(len(a.shape) - 2)) + (len(a.shape) - 1, len(a.shape) - 2)
         else:
-            axe = self.axes
-            return array_api.transpose(a, axes = axe)
-        return array_api.transpose(a, axes = axe)
-
-            
+            # axes is a tuple of two axes to swap, need to build full permutation
+            axe = list(range(len(a.shape)))
+            axe[self.axes[0]], axe[self.axes[1]] = axe[self.axes[1]], axe[self.axes[0]]
+            axe = tuple(axe)
+        return array_api.transpose(a, axes=axe)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
