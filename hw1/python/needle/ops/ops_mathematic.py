@@ -100,14 +100,14 @@ class EWisePow(TensorOp):
         return a**b
 
     def gradient(self, out_grad, node):
-        if not isinstance(node.inputs[0], NDArray) or not isinstance(
-            node.inputs[1], NDArray
-        ):
-            raise ValueError("Both inputs must be tensors (NDArray).")
+      ##  if not isinstance(node.inputs[0], NDArray) or not isinstance(
+      ##      node.inputs[1], NDArray
+      ##  ):
+      ##      raise ValueError("Both inputs must be tensors (NDArray).")
 
         a, b = node.inputs[0], node.inputs[1]
         grad_a = out_grad * b * (a ** (b - 1))
-        grad_b = out_grad * (a**b) * array_api.log(a.data)
+        grad_b = out_grad * (a**b) * log(a)
         return grad_a, grad_b
 
 def power(a, b):
@@ -125,8 +125,8 @@ class EWiseDiv(TensorOp):
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
         a, b = node.inputs[0], node.inputs[1]
-        grad_a = (1/b) * out_grad
-        grad_b = -a/(b ** 2) *out_grad
+        grad_a = out_grad / b
+        grad_b = -out_grad * a / (b ** 2)
         return grad_a, grad_b
         ### END YOUR SOLUTION
 
@@ -146,7 +146,7 @@ class DivScalar(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return 1 / self.scalar 
+        return out_grad / self.scalar 
         ### END YOUR SOLUTION
 
 
@@ -279,6 +279,16 @@ class MatMul(TensorOp):
         rhs_grad = transpose(lhs) @ out_grad
         #唉，高维张量就不合适了，有一个广播导致rank扩张的问题，
         #还不会处理
+        if (len(lhs_grad.shape) > len (lhs.shape)):
+            #多出来的轴在前面
+            iter_tem = range(len(lhs_grad.shape) - len(lhs.shape))
+            to_be_abandon = tuple(iter_tem) 
+            lhs_grad = summation(lhs_grad, to_be_abandon)
+        if (len(rhs_grad.shape) > len (rhs.shape)):
+            #多出来的轴在前面
+            iter_tem = range(len(rhs_grad.shape) - len(rhs.shape))
+            to_be_abandon = tuple(iter_tem) 
+            rhs_grad = summation(rhs_grad, to_be_abandon)
         return lhs_grad, rhs_grad
         ### END YOUR SOLUTION
 
@@ -312,7 +322,7 @@ class Log(TensorOp):
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
         a = node.inputs[0]
-        grad = 1/a * out_grad
+        grad = out_grad / a
         return grad
         ### END YOUR SOLUTION
 
@@ -329,7 +339,7 @@ class Exp(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return out_grad * exp(node.input[0])
+        return out_grad * exp(node.inputs[0])
         ### END YOUR SOLUTION
 
 
