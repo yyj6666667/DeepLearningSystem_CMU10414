@@ -33,7 +33,21 @@ def parse_mnist(image_filename, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    image = gzip.open(image_filename, "rb")
+    label = gzip.open(label_filename, "rb")
+    image.read(4)
+    num_images = struct.unpack(">I", image.read(4))[0]
+    num_rows = struct.unpack(">I", image.read(4))[0]
+    num_cols = struct.unpack(">I", image.read(4))[0]
+    label.read(4)
+    num_labels = struct.unpack(">I", label.read(4))[0]
+    X = np.frombuffer(image.read(), dtype=np.uint8).reshape(num_images, num_rows * num_cols)
+    y = np.frombuffer(label.read(), dtype=np.uint8)
+    X = X.astype(np.float32)
+    X = X / 255.0
+    y = y.astype(np.int8)
+    return (X, y)
+
     ### END YOUR SOLUTION
 
 
@@ -54,7 +68,11 @@ def softmax_loss(Z, y_one_hot):
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    Z_exp = ndl.ops.exp(Z)
+    Z_exp_sum = ndl.ops.summation(Z_exp, axes= (1,))
+    log_sum = ndl.ops.log(Z_exp_sum)
+    y_in_dimension_1 = ndl.ops.summation(Z * y_one_hot, axes= (1,))
+    return ndl.ops.summation(log_sum - y_in_dimension_1) / log_sum.shape[0]
     ### END YOUR SOLUTION
 
 
@@ -83,7 +101,29 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
     """
 
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    num_examples = X.shape[0]
+    for i in range(0, num_examples, batch):
+        X_batch = ndl.Tensor(X[i : i + batch])
+        y_batch = y[i : i + batch]
+        y_one_hot = np.zeros((y_batch.shape[0], W2.shape[1]))
+        y_one_hot[np.arange(y_batch.size), y_batch] = 1
+        y_one_hot_tensor = ndl.Tensor(y_one_hot)
+
+        # Forward pass
+        hidden = ndl.ops.relu(ndl.ops.matmul(X_batch, W1))
+        logits = ndl.ops.matmul(hidden, W2)
+
+        # Compute loss
+        loss = softmax_loss(logits, y_one_hot_tensor)
+
+        # Backward pass
+        loss.backward()
+
+        # Update weights
+        W1 = (W1 -lr * W1.grad).detach()
+        W2 = (W2 - lr * W2.grad).detach()
+
+    return (W1, W2)
     ### END YOUR SOLUTION
 
 

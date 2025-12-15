@@ -350,19 +350,13 @@ def exp(a):
 class ReLU(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        if (a >= 0):
-            return a
-        else:
-            return 0
+        return a * (a > 0)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
         input_data = node.inputs[0].realize_cached_data()
-        if (input_data > 0):
-            return 1 * out_grad
-        else:
-            return 0
+        return (Tensor(input_data > 0)) * out_grad
         ### END YOUR SOLUTION
 
 
