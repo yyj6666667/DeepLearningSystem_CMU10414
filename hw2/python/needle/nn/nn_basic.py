@@ -94,7 +94,7 @@ class Linear(Module):
         ### BEGIN YOUR SOLUTION
         if self.bias is not None:
             mul_res = ops.matmul(X, self.weight)
-            reshaped_bias = self.bias.reshape(1, self.out_features)
+            reshaped_bias = self.bias.reshape((1, self.out_features))
             broadcasted_bias = ops.broadcast_to(reshaped_bias, mul_res.shape)
             return mul_res + broadcasted_bias
         else:
