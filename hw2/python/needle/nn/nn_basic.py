@@ -86,7 +86,7 @@ class Linear(Module):
         self.in_features = in_features
         self.out_features = out_features
         self.weight = Parameter(init.kaiming_uniform(in_features, out_features, device = device, dtype = dtype))
-        self.bias = Parameter((init.kaiming_uniform(out_features, 1, device = device, dtype = dtype)).reshape((out_features,))) if bias else None #太抽象了哈哈哈哈，当时我可是想明白了的啊，后人看不懂就算了
+        self.bias = Parameter((init.kaiming_uniform(out_features, 1, device = device, dtype = dtype)).reshape((1, out_features))) if bias else None #太抽象了哈哈哈哈，当时我可是想明白了的啊，后人看不懂就算了
         #下次还是分开写吧， 这样写太折寿了
         ### END YOUR SOLUTION
 
