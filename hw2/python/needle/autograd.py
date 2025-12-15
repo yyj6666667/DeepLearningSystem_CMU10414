@@ -1,7 +1,7 @@
 """Core data structures."""
 import needle
 from .backend_numpy import Device, cpu, all_devices
-from typing import List, Optional, NamedTuple, Tuple, Union, Dict
+from typing import List, Optional, NamedTuple, Tuple, Union
 from collections import namedtuple
 import numpy
 
@@ -13,16 +13,19 @@ TENSOR_COUNTER = 0
 
 # NOTE: we will import numpy as the array_api
 # as the backend for our computations, this line will change in later homeworks
-
 import numpy as array_api
+
 NDArray = numpy.ndarray
 
 
 class Op:
     """Operator definition."""
+    def __init__(self):
+        #do nothing
+        pass
 
     def __call__(self, *args):
-        raise NotImplementedError()
+        return self.compute(*args)
 
     def compute(self, *args: Tuple[NDArray]):
         """Calculate forward pass of operator.
@@ -38,6 +41,7 @@ class Op:
             Array output of the operation
 
         """
+        #implement, 这是一个抽象类，后面要实现的
         raise NotImplementedError()
 
     def gradient(
@@ -106,7 +110,17 @@ class Value:
         self.cached_data = self.op.compute(
             *[x.realize_cached_data() for x in self.inputs]
         )
+        #debug ： 添加类型检查和扁平化处理
+        #else :
+        #    buf_inputs = []
+        #    for x in self.inputs:
+        #        if isinstance(x, tuple) or isinstance(x, list):
+        #            buf_inputs.extend(x)
+        #        else:
+        #            buf_inputs.append(x)
+        #   self.cached_data = self.op.compute(*[item.realize_cached_data() for item in buf_inputs])
         return self.cached_data
+
 
     def is_leaf(self):
         return self.op is None
@@ -187,7 +201,7 @@ class TensorTuple(Value):
 
     def detach(self):
         """Create a new tensor that shares the data but detaches from the graph."""
-        return TensorTuple.make_const(self.realize_cached_data())
+        return Tuple.make_const(self.realize_cached_data())
 
 
 class Tensor(Value):
@@ -304,7 +318,7 @@ class Tensor(Value):
     def numpy(self):
         data = self.realize_cached_data()
         if array_api is numpy:
-            return numpy.array(data)
+            return data
         return data.numpy()
 
     def __add__(self, other):
@@ -358,13 +372,16 @@ class Tensor(Value):
     def transpose(self, axes=None):
         return needle.ops.Transpose(axes)(self)
 
+    def exp(self):
+        return needle.ops.exp()(self)
 
     __radd__ = __add__
     __rmul__ = __mul__
+    __rsub__ = __sub__
+    __rmatmul__ = __matmul__
 
 
-
-def compute_gradient_of_variables(output_tensor, out_grad):
+def compute_gradient_of_variables(self_tensor, out_grad):
     """Take gradient of output node with respect to each node in node_list.
 
     Store the computed result in the grad field of each Variable.
@@ -374,15 +391,35 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     # Special note on initializing gradient of
     # We are really taking a derivative of the scalar reduce_sum(output_node)
     # instead of the vector output_node. But this is the common case for loss function.
-    node_to_output_grads_list[output_tensor] = [out_grad]
+    node_to_output_grads_list[self_tensor] = [out_grad]
 
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
-    reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
+    reverse_topo_order = list(reversed(find_topo_sort([self_tensor])))
 
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    for node in reverse_topo_order:               #一次就做完了，不需要递归
+        node.grad = sum_node_list(node_to_output_grads_list[node])
+        #for input_node in node.inputs:
+        #    if node.inputs is None:
+        #        continue
+        #    v_k_to_i = node.op.gradient(node.grad, node)
+        #    if input_node not in node_to_output_grads_list:
+        #        node_to_output_grads_list[input_node] = [node]
+        #    node_to_output_grads_list[input_node].extend(v_k_to_i)
+        if node.op is None:  # 如果是叶子节点，跳过
+            continue
+        # 计算所有输入的梯度（可能返回单个 Tensor 或 tuple of Tensors）
+        input_grads = node.op.gradient(node.grad, node)
+        # 确保 input_grads 是 tuple 格式
+        if not isinstance(input_grads, tuple):
+            input_grads = (input_grads,)
+        # 将梯度分配给对应的输入节点
+        for input_node, input_grad in zip(node.inputs, 
+        input_grads):
+            if input_node not in node_to_output_grads_list:
+                node_to_output_grads_list[input_node] = []
     ### END YOUR SOLUTION
-
+            node_to_output_grads_list[input_node].append(input_grad)
 
 def find_topo_sort(node_list: List[Value]) -> List[Value]:
     """Given a list of nodes, return a topological sort list of nodes ending in them.
@@ -393,14 +430,23 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     sort.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    visited = set()
+    topo_order = []
+    for node in node_list:
+        topo_sort_dfs(node, visited, topo_order)
+    return topo_order
     ### END YOUR SOLUTION
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    if node in visited:
+        return 
+    visited.add(node)
+    for input_node in node.inputs:
+        topo_sort_dfs(input_node, visited, topo_order)
+    topo_order.append(node)
     ### END YOUR SOLUTION
 
 
