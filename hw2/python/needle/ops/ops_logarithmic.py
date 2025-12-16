@@ -12,12 +12,17 @@ import numpy as array_api
 class LogSoftmax(TensorOp):
     def compute(self, Z: NDArray) -> NDArray:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        res = Z - (ops.logsumexp(Tensor(Z), axes = (1,))).numpy().reshape((Z.shape[0], -1))
+        return res
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad: Tensor, node: Tensor):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        input = node.inputs[0]
+        part_1 = Tensor([1]).broadcast_to(input.shape)
+        softmax = ops.exp(node) 
+        grad = out_grad - softmax * (ops.summation(out_grad, axes = (1,)).reshape((input.shape[0], 1)).broadcast_to(input.shape))
+        return grad
         ### END YOUR SOLUTION
 
 
@@ -36,10 +41,8 @@ class LogSumExp(TensorOp):
         Z_exp = array_api.exp(Z_stable)
         Z_exp_sum = array_api.sum(Z_exp, axis = self.axes, keepdims = True)
         logsumexp = array_api.log(Z_exp_sum) + Z_max
-        if self.axes is not None:
-            logsumexp = array_api.squeeze(logsumexp, axis = self.axes)
-
-        return logsumexp
+        Z_max_final = array_api.max(Z, axis = self.axes, keepdims= False)
+        return logsumexp.reshape(Z_max_final.shape)
 
         ### END YOUR SOLUTION
 

@@ -132,7 +132,12 @@ class Sequential(Module):
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        log_softmax = ops.logsoftmax(logits)
+        batch_size = logits.shape[0]
+        y_hot = init.one_hot(logits.shape[1], y)
+        Z_hot = log_softmax * y_hot
+        loss = -ops.summation(ops.summation(Z_hot, axes = (1,))) / batch_size
+        return loss
         ### END YOUR SOLUTION
 
 
@@ -156,15 +161,36 @@ class BatchNorm1d(Module):
 class LayerNorm1d(Module):
     def __init__(self, dim: int, eps: float = 1e-5, device: Any | None = None, dtype: str = "float32") -> None:
         super().__init__()
-        self.dim = dim
+        self.dim = dim #dim is number of features
         self.eps = eps
+        self.weight = Parameter(init.ones(dim, device=device, dtype = dtype))
+        self.bias = Parameter(init.zeros(dim, device=device, dtype = dtype))
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+    
+    def Varience(self, x: Tensor) -> Tensor:
+        mean = ops.summation(x, axes = (1,)) / x.shape[1]
+        mean_b = mean.reshape((x.shape[0], 1)).broadcast_to(x.shape)
+        diff = x - mean_b
+        sq_diff = diff * diff
+        var = ops.summation(sq_diff, axes = (1,)) / x.shape[1]
+        return var #(batch,)
         ### END YOUR SOLUTION
+
+    def Std(self, var: Tensor) -> Tensor:
+        std = ops.power_scalar(var + self.eps, 0.5)
+        return std
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # y = w * (x - mean) / std + b
+        # dis = (x - mean) / std
+        mean = ops.summation(x, axes = (1,)) / x.shape[1]
+        mean_b = mean.reshape((x.shape[0], 1)).broadcast_to(x.shape)
+        dis = (x - mean_b) / self.Std(self.Varience(x)).reshape((x.shape[0], 1)).broadcast_to(x.shape)
+        w_b = self.weight.reshape((1, self.dim)).broadcast_to(x.shape)
+        b_b = self.bias.reshape((1, self.dim)).broadcast_to(x.shape)
+        y = w_b * dis + b_b
+        return y
         ### END YOUR SOLUTION
 
 
