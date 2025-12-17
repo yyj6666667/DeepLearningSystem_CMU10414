@@ -105,7 +105,8 @@ class Linear(Module):
 class Flatten(Module):
     def forward(self, X: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        X = X.reshape((X.shape[0], -1))
+        return X
         ### END YOUR SOLUTION
 
 
@@ -148,12 +149,30 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = Parameter(init.ones(dim, device = device, dtype = dtype))
+        self.bias   = Parameter(init.zeros(dim, device = device, dtype = dtype))
+        self.running_mean = init.zeros(dim, device = device, dtype = dtype)
+        self.running_var  = init.ones(dim, device = device, dtype = dtype)
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.training :
+            batch_mean = ops.summation(x, axes = (0,)) / x.shape[0] #(dim,)
+            diff = x - batch_mean.reshape((1, self.dim)).broadcast_to(x.shape)
+            batch_var  = ops.summation(diff * diff , axes = (0,)) / x.shape[0]
+
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean.data
+            self.running_var  = (1- self.momentum) * self.running_var + self.momentum * batch_var.data
+
+            mul_by_weight = (x - batch_mean.reshape(1, self.dim).broadcast_to(x.shape)) / ops.power_scalar(batch_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
+            
+        elif self.training is False :
+            mul_by_weight = (x - self.running_mean.reshape(1, self.dim).broadcast_to(x.shape)) / ops.power_scalar(self.running_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
+        
+        y = self.weight.reshape(1, self.dim).broadcast_to(x.shape) * mul_by_weight + self.bias.reshape(1, self.dim).broadcast_to(x.shape)
+        return  y
+
         ### END YOUR SOLUTION
 
 
