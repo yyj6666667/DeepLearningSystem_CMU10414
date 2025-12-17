@@ -165,12 +165,12 @@ class BatchNorm1d(Module):
             self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean.data
             self.running_var  = (1- self.momentum) * self.running_var + self.momentum * batch_var.data
 
-            mul_by_weight = (x - batch_mean.reshape(1, self.dim).broadcast_to(x.shape)) / ops.power_scalar(batch_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
+            mul_by_weight = (x - batch_mean.reshape((1, self.dim)).broadcast_to(x.shape)) / ops.power_scalar(batch_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
             
         elif self.training is False :
-            mul_by_weight = (x - self.running_mean.reshape(1, self.dim).broadcast_to(x.shape)) / ops.power_scalar(self.running_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
+            mul_by_weight = (x - self.running_mean.reshape((1, self.dim)).broadcast_to(x.shape)) / ops.power_scalar(self.running_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
         
-        y = self.weight.reshape(1, self.dim).broadcast_to(x.shape) * mul_by_weight + self.bias.reshape(1, self.dim).broadcast_to(x.shape)
+        y = self.weight.reshape((1, self.dim)).broadcast_to(x.shape) * mul_by_weight + self.bias.reshape((1, self.dim)).broadcast_to(x.shape)
         return  y
 
         ### END YOUR SOLUTION
@@ -220,7 +220,14 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        shape = x.shape
+        bernoulli_distri = init.randb(*shape, p = 1 - self.p, device = x.device)
+        b_dis = bernoulli_distri
+        if self.training is True :
+            x_hat = ops.mul_scalar(x * b_dis, 1 / (1 - self.p))
+            return x_hat
+        else :
+            return x
         ### END YOUR SOLUTION
 
 
@@ -231,5 +238,5 @@ class Residual(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return self.fn + x
         ### END YOUR SOLUTION

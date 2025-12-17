@@ -20,12 +20,18 @@ class SGD(Optimizer):
         super().__init__(params)
         self.lr = lr
         self.momentum = momentum
-        self.u = {}
+        self.u = {} #储存动量
         self.weight_decay = weight_decay
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for single_param in self.params:
+            grad = single_param.grad.data + self.weight_decay * single_param.data
+            if single_param not in self.u:
+                self.u[single_param] = 0
+            self.u[single_param] = self.momentum * self.u[single_param] + (1 - self.momentum) * grad
+            single_param.data = single_param.data - self.lr * self.u[single_param]
+            
         ### END YOUR SOLUTION
 
     def clip_grad_norm(self, max_norm=0.25):
@@ -61,5 +67,19 @@ class Adam(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.t += 1
+        for param in self.params:
+            #l2 norm:
+            grad = param.grad.data + self.weight_decay * param.data
+
+            if param not in self.m:
+                self.m[param] = 0
+            if param not in self.v:
+                self.v[param] = 0
+            self.m[param] = self.beta1 * self.m[param] + (1 - self.beta1) * grad
+            self.v[param] = self.beta2 * self.v[param] + (1 - self.beta2) * (grad ** 2)
+            m_hat = self.m[param] / (1 - self.beta1 ** self.t)
+            v_hat = self.v[param] / (1 - self.beta2 ** self.t)
+            tem_grad = m_hat / (v_hat ** 0.5 + self.eps)
+            param.data = param.data - self.lr * tem_grad
         ### END YOUR SOLUTION
