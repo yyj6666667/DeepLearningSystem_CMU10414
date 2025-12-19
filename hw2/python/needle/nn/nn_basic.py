@@ -79,7 +79,7 @@ class Identity(Module):
         return x
 
 
-class Linear(Module):
+class  Linear(Module):
     def __init__(self, in_features: int, out_features: int, bias: bool = True, device: Any | None = None, dtype: str = "float32") -> None:
         super().__init__()
         ### BEGIN YOUR SOLUTION
@@ -238,5 +238,5 @@ class Residual(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        return self.fn + x
+        return self.fn(x) + x
         ### END YOUR SOLUTION
