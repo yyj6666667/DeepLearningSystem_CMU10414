@@ -46,7 +46,7 @@ def MLPResNet(
                         nn.Linear(dim, hidden_dim),
                         nn.ReLU(),
                         *tuple_ResidualBlock,
-                        nn.Linear(dim, num_classes)
+                        nn.Linear(hidden_dim, num_classes)
     )
     return sequence
     ### END YOUR SOLUTION
@@ -70,6 +70,7 @@ def epoch(dataloader, model, opt=None):
 
         if opt is not None:
             opt.reset_grad()
+
         hypothesis = model(X)
         loss = loss_fn(hypothesis, y)
 
@@ -84,7 +85,7 @@ def epoch(dataloader, model, opt=None):
     total_len = len(dataloader.dataset)
     aver_loss = total_loss / total_len
     err_rate  = total_err / total_len
-    return aver_loss, err_rate
+    return err_rate, aver_loss
 
     ### END YOUR SOLUTION
 
@@ -100,21 +101,22 @@ def train_mnist(
 ):
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    data_train = ndl.data.MNISTDataset(data_dir + "train-images-idx3-ubyte.gz",
-                                           data_dir + "train-labels-idx1-ubyte.gz",
-                                           ndl.data.RandomCrop)
-    data_test = ndl.data.MNISTDataset(data_dir + "t10k-images-idx3-ubyte.gz",
-                                      data_dir + "t10k-labels-idx1-ubyte.gz"
+    data_train = ndl.data.MNISTDataset(data_dir + "/train-images-idx3-ubyte.gz",
+                                           data_dir + "/train-labels-idx1-ubyte.gz"
+                                           )
+    #cao, 加上括号才是实例化
+    data_test = ndl.data.MNISTDataset(data_dir + "/t10k-images-idx3-ubyte.gz",
+                                      data_dir + "/t10k-labels-idx1-ubyte.gz"
                                       )
     train_loader = ndl.data.DataLoader(data_train, batch_size, shuffle=True)
-    test_loader  = ndl.data.DataLoader(data_test,  data_test.len(), shuffle = False)
+    test_loader  = ndl.data.DataLoader(data_test,  batch_size, shuffle = False)
 
     model = MLPResNet(28 ** 2, hidden_dim = hidden_dim )
-    opt = optimizer(model.parameters, lr = lr, weight_decay=weight_decay)
+    opt = optimizer(model.parameters(), lr = lr, weight_decay=weight_decay)
 
     for e in range(epochs):
         train_err, train_loss = epoch(train_loader, model, opt=opt)
-        print(f"Epoch {e + 1}  train_err = {train_err:.4f}, train_loss= {train_loss::.4f}")
+        print(f"Epoch {e + 1}  train_err = {train_err:.4f}, train_loss= {train_loss:.4f}")
     
     test_err, test_loss = epoch(test_loader, model, None)
 

@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./hw2/python"
+    ]
+}

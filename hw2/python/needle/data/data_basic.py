@@ -75,8 +75,11 @@ class DataLoader:
             raise StopIteration
         batch_indices = self.ordering[self.batch_idx]
         self.batch_idx += 1
-        batch_data = np.array([self.dataset[i][0] for i in batch_indices])
-        batch_label = np.array([self.dataset[i][1] for i in batch_indices])
-        return (batch_data, batch_label)
+        datas = self.dataset[batch_indices]
+        #return (batch_indices_len, H, W, 1) and (b_i_len, labels_num)
+        #return Tensor(datas[0]), Tensor(datas[1])
+        return [Tensor(data) for data in datas]
+       
+       
         ### END YOUR SOLUTION
 

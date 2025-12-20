@@ -15,7 +15,7 @@ class MNISTDataset(Dataset):
         with gzip.open(image_filename, 'rb') as f:
             magic, num, rows, cols = struct.unpack('>4I', f.read(16))
             images = np.frombuffer(f.read(), dtype = np.uint8)
-            images = images.reshape((num, rows, cols))
+            images = images.reshape((num, rows, cols, 1))
             images = images.astype(np.float32) / 255.0
 
         with gzip.open(label_filename, 'rb') as f:
@@ -33,6 +33,7 @@ class MNISTDataset(Dataset):
         ### BEGIN YOUR SOLUTION
         img = self.images[index]
         label = self.labels[index]
+        
         img = self.apply_transforms(img)
 
         return img, label

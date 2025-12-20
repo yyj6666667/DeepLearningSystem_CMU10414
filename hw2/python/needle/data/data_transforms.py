@@ -45,5 +45,7 @@ class RandomCrop(Transform):
         padded= np.pad(img, ((const, const),
                             (const, const),
                             (0,  0)))
-        return padded[shift_x : shift_x + H, shift_y : shift_y + W]
+        real_shift_x = shift_x + self.padding
+        real_shift_y = shift_y + self.padding
+        return padded[real_shift_x : real_shift_x + H, real_shift_y : real_shift_y + W]
         ### END YOUR SOLUTION
