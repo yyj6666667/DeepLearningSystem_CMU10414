@@ -6,12 +6,12 @@ debug log：
 * 找到问题了， 是随机种子的消费跟创建的sequence层有关
 * 单独跑MLPResNet， 使用不同的数据预先方式：
     * 不处理： 
-    <img src="images/image-10.png" alt="alt text" width="500">
+    <img src="images/image-10.png" alt="alt text" width="400">
     * RandomFlipHorizontal:
-      水平翻转强迫模型学习更一般的特征<img src="images/image-9.png" alt="alt text" width="600">
+      水平翻转强迫模型学习更一般的特征<img src="images/image-9.png" alt="alt text" width="400">
       真打脸， 还不如不处理，可能是epoch太少了
     * RandomCrop:
-      <img src="images/image-11.png" alt="alt text" width="500">
+      <img src="images/image-11.png" alt="alt text" width="400">
       也差一些， 这个还能理解一些， 裁剪了一些特征
 
 
