@@ -111,7 +111,6 @@ def train_mnist(
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
     optional_transforms_1 = [
-       ndl.data.RandomCrop(padding = 3)
     ]
     data_train = ndl.data.MNISTDataset(data_dir + "/train-images-idx3-ubyte.gz",
                                            data_dir + "/train-labels-idx1-ubyte.gz",
