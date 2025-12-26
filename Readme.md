@@ -1,3 +1,20 @@
+---
+debug log：
+---
+12.26
+* 跑起来了， 但是和checkpoint不一致
+* 找到问题了， 是随机种子的消费跟创建的sequence层有关
+* 单独跑MLPResNet， 使用不同的数据预先方式：
+    *不处理： 
+    ![alt text](image-10.png)
+    * RandomFlipHorizontal:
+      水平翻转强迫模型学习更一般的特征![alt text](image-9.png)
+      真打脸， 还不如不处理，可能是epoch太少了
+    * RandomCrop:
+      ![alt text](image-11.png)
+      这个也差一些， 这个还能理解一些， 裁剪了一些特征
+
+
 从12.15继续：
 ---
 12.15
@@ -30,6 +47,12 @@
 * 在实现ResidualBlock的过程中， nn.Sequential串联起module, Module 的封装与数据是分离的
 ![alt text](image-6.png)
 ![alt text](image-7.png)
-* 还有魔法方法__getitem__， 丢人呐，加上括号才是实例化
 * datas = self.dataset[batch_indices], dataset 传回来的是tuple，所以这里batch_indices数组传入后， 得到的datas是数组tuple
 * Tensor(data) for data in datas 也是对于tuple中的一个元素操作
+
+
+
+
+
+
+
