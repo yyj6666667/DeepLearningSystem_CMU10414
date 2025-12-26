@@ -33,8 +33,12 @@ class MNISTDataset(Dataset):
         ### BEGIN YOUR SOLUTION
         img = self.images[index]
         label = self.labels[index]
-        
-        img = self.apply_transforms(img)
+        #hh， 传了索引进去， 炸了吧
+
+        if isinstance(index, (list, np.ndarray, tuple)):
+            img = np.stack([self.apply_transforms(single) for single in img], axis = 0)
+        else:
+            img = self.apply_transforms(img)
 
         return img, label
         ### END YOUR SOLUTION

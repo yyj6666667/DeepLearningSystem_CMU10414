@@ -1,11 +1,12 @@
 import sys
+import os
 
-sys.path.append("../python")
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(cur_dir, "../python"))
 import needle as ndl
 import needle.nn as nn
 import numpy as np
 import time
-import os
 
 np.random.seed(0)
 # MY_DEVICE = ndl.backend_selection.cuda()
@@ -109,9 +110,13 @@ def train_mnist(
 ):
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
+    optional_transforms_1 = [
+       ndl.data.RandomCrop(padding = 3)
+    ]
     data_train = ndl.data.MNISTDataset(data_dir + "/train-images-idx3-ubyte.gz",
-                                           data_dir + "/train-labels-idx1-ubyte.gz"
-                                           )
+                                           data_dir + "/train-labels-idx1-ubyte.gz",
+                                           optional_transforms_1)
+    print("train with transforms:", optional_transforms_1)
     data_test = ndl.data.MNISTDataset(data_dir + "/t10k-images-idx3-ubyte.gz",
                                       data_dir + "/t10k-labels-idx1-ubyte.gz"
                                       )
