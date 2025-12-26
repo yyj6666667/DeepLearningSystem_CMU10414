@@ -38,15 +38,23 @@ def MLPResNet(
     drop_prob=0.1,
 ):
     ### BEGIN YOUR SOLUTION
-    tuple_ResidualBlock = []
-    for i in range(num_blocks):
-        tuple_ResidualBlock.append(ResidualBlock(hidden_dim, hidden_dim//2, norm, drop_prob))
-    
+ #   tuple_ResidualBlock = []
+ #   for i in range(num_blocks):
+ #       tuple_ResidualBlock.append(ResidualBlock(hidden_dim, #hidden_dim//2, norm, drop_prob))
+ #   
+ #   sequence = nn.Sequential(
+ #                       nn.Linear(dim, hidden_dim),
+ #                       nn.ReLU(),
+ #                       *tuple_ResidualBlock,
+ #                       nn.Linear(hidden_dim, num_classes)
+ #   )
+ #   return sequence
+
     sequence = nn.Sequential(
-                        nn.Linear(dim, hidden_dim),
-                        nn.ReLU(),
-                        *tuple_ResidualBlock,
-                        nn.Linear(hidden_dim, num_classes)
+                nn.Linear(dim, hidden_dim),
+                nn.ReLU(),
+                *[ResidualBlock(hidden_dim, hidden_dim//2, norm, drop_prob) for _ in range(num_blocks)],
+                nn.Linear(hidden_dim, num_classes)
     )
     return sequence
     ### END YOUR SOLUTION
