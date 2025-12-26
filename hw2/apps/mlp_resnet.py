@@ -104,7 +104,6 @@ def train_mnist(
     data_train = ndl.data.MNISTDataset(data_dir + "/train-images-idx3-ubyte.gz",
                                            data_dir + "/train-labels-idx1-ubyte.gz"
                                            )
-    #cao, 加上括号才是实例化
     data_test = ndl.data.MNISTDataset(data_dir + "/t10k-images-idx3-ubyte.gz",
                                       data_dir + "/t10k-labels-idx1-ubyte.gz"
                                       )
@@ -119,6 +118,7 @@ def train_mnist(
         print(f"Epoch {e + 1}  train_err = {train_err:.4f}, train_loss= {train_loss:.4f}")
     
     test_err, test_loss = epoch(test_loader, model, None)
+    print(f"Final Test: test_err = {test_err:.4f}, test_loss= {test_loss:.4f}")
 
     return train_err, train_loss, test_err, test_loss
     ### END YOUR SOLUTION

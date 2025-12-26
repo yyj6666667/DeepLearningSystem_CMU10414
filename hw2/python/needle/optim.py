@@ -3,6 +3,7 @@ import needle as ndl
 import numpy as np
 
 
+
 class Optimizer:
     def __init__(self, params):
         self.params = params
@@ -81,5 +82,5 @@ class Adam(Optimizer):
             m_hat = self.m[param] / (1 - self.beta1 ** self.t)
             v_hat = self.v[param] / (1 - self.beta2 ** self.t)
             tem_grad = m_hat / (v_hat ** 0.5 + self.eps)
-            param.data = param.data - self.lr * tem_grad
+            param.data = param.data - np.float32(self.lr) * ndl.Tensor(tem_grad, dtype = param.data.dtype)
         ### END YOUR SOLUTION
