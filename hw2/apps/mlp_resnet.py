@@ -61,41 +61,33 @@ def MLPResNet(
     ### END YOUR SOLUTION
 
 
-def epoch(dataloader, model, opt=None):
+def epoch(dataloader: ndl.data.DataLoader, model :nn.Module, opt: ndl.optim.Optimizer =None):
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    if opt is not None:
-        model.train()
-    else:
-        model.eval()
-    
+    model.eval() if opt is None else model.train()
     loss_fn = nn.SoftmaxLoss()
+    sum_loss = 0.0
+    sum_err = 0.0
 
-    total_loss = 0.0
-    total_err  = 0.0
 
-    for X, y in dataloader:
-        X = X.reshape((X.shape[0],-1))
-
-        if opt is not None:
-            opt.reset_grad()
-
-        hypothesis = model(X)
+    for i, batch in enumerate(dataloader):
+        X, y  = batch
+        hypothesis = model(X.reshape((X.shape[0], -1)))
         loss = loss_fn(hypothesis, y)
 
         if model.training:
+            opt.reset_grad()
             loss.backward()
             opt.step()
 
-        predictions = np.argmax(hypothesis.numpy(), axis = 1)
+        sum_loss += loss.data.numpy() * X.shape[0]
+        y_pred = np.argmax(hypothesis.detach().numpy(), axis = 1)
+        sum_err += np.sum(y_pred != y.numpy())
 
-        total_loss += loss.numpy().item() * y.shape[0]
-        total_err  += np.sum(predictions != y.numpy())
-    total_len = len(dataloader.dataset)
-    aver_loss = total_loss / total_len
-    err_rate  = total_err / total_len
-    return err_rate, aver_loss
-
+    aver_loss = sum_loss / len(dataloader.dataset) * 1.0
+    aver_err  = sum_err / len(dataloader.dataset) * 1.0
+    return aver_err, aver_loss
+        
     ### END YOUR SOLUTION
 
 
