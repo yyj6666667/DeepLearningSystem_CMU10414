@@ -3,7 +3,7 @@ debug log：
 ---
 12.26
 * 跑起来了， 但是和checkpoint不一致
-* 找到问题了， 是随机种子的消费跟创建的sequence层有关
+* 找到问题了，module创建顺序不同 → RNG 消费顺序不同 → 权重不同 → forward 输出不同
 * 单独跑MLPResNet， 使用不同的数据预先方式：
     * 不处理： 
 
