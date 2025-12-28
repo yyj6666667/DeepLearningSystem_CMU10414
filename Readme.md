@@ -1,6 +1,12 @@
 ---
 debug log：
 ---
+12.28
+* hw3: ops backend implement，结构操作尽量python处理 ，算数交给底层cpp
+* as_strided： 在handle句柄相同时，设置新的shape和strides， 通过修改元数据生成新的视图， 内存开销为0， 否则alloc memory
+* strides在内存紧凑期间仅由shape就能确定， 句柄handle可能指向三个地方：numpy的内存， cpu'ram, gpu's 显存
+* permute 仅需要np.random.shuffle(tem = range(len(stuff.shape))), 就能确定新的stuff.shape, 进而确定新的strides
+
 12.26
 * 跑起来了， 但是和checkpoint不一致
 * 找到问题了，module创建顺序不同 → RNG 消费顺序不同 → 权重不同 → forward 输出不同

@@ -140,6 +140,15 @@ class NDArray:
             res.append(stride)
             stride *= shape[-i]
         return tuple(res[::-1])
+    
+    @staticmethod
+    def compact_strides_yyj(shape) -> tuple[int, ...] :
+        stride = 1
+        res = []
+        for i in range(1, len(shape) + 1) :
+            res.append(stride)
+            stride *= shape[-i]
+        return tuple(res[::-1])
 
     @staticmethod
     def make(
@@ -239,6 +248,10 @@ class NDArray:
         return NDArray.make(
             shape, strides=strides, device=self.device, handle=self._handle, offset=self._offset
         )
+    
+    def as_strided_yyj(self, shape, strides):
+        return NDArray.make(shape, strides, device = self._device,
+                            handle=self._handle, offset = self._offset)
 
     @property
     def flat(self) -> "NDArray":
@@ -262,7 +275,9 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        assert self.size == reduce(operator.mul, new_shape, 1) , "total size must be same"
+        res = NDArray.as_strided_yyj(self, new_shape, NDArray.compact_strides_yyj(new_shape))
+        return res
         ### END YOUR SOLUTION
 
     def permute(self, new_axes: tuple[int, ...]) -> "NDArray":
@@ -287,7 +302,11 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        assert set(new_axes == set(range(self.ndim))), "easy, just to make sure the passed-in axes is legal"
+        ## hh, 只需要改变shape and strides
+        new_shape = tuple(self.shape[iter] for iter in new_axes)
+        new_strides = NDArray.compact_strides_yyj(new_shape)
+        return NDArray.as_strided(self, new_shape, new_strides)
         ### END YOUR SOLUTION
 
     def broadcast_to(self, new_shape: tuple[int, ...]) -> "NDArray":
