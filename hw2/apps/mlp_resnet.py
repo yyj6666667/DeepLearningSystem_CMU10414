@@ -97,7 +97,7 @@ def train_mnist(
     optimizer=ndl.optim.Adam,
     lr=0.001,
     weight_decay=0.001,
-    hidden_dim=100,
+    hidden_dim=150,
     data_dir="data",
 ):
     np.random.seed(4)

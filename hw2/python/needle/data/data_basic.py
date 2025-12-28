@@ -58,28 +58,51 @@ class DataLoader:
             self.ordering = np.array_split(np.arange(len(dataset)), 
                                            range(batch_size, len(dataset), batch_size))
 
+    ##def __iter__(self):
+    ##    ### BEGIN YOUR SOLUTION
+    ##    #indices = np.arange(len(self.dataset))
+    ##    indices = np.array(range(len(self.dataset)))
+    ##    if self.shuffle  :
+    ##        np.random.shuffle(indices)
+    ##    self.ordering = np.array_split(indices, range(self.##batch_size, len(indices), self.batch_size))
+    ##    self.batch_idx = 0
+    ##    ### END YOUR SOLUTION
+    ##    return self
+
+    ##def __next__(self):
+    ##    ### BEGIN YOUR SOLUTION
+    ##    if self.batch_idx >= len(self.ordering):
+    ##        raise StopIteration
+    ##    batch_indices: np.ndarray = self.ordering[self.batch_idx]
+    ##    self.batch_idx += 1
+
+    ##    datas = self.dataset[batch_indices]
+    ##    return [Tensor(data) for data in datas]
+    ##   
+    ##   
+    ##    ### END YOUR SOLUTION
     def __iter__(self):
-        ### BEGIN YOUR SOLUTION
-        #indices = np.arange(len(self.dataset))
-        indices = np.array(range(len(self.dataset)))
-        if self.shuffle :
-            np.random.shuffle(indices)
-        self.ordering = np.array_split(indices, range(self.batch_size, len(indices), self.batch_size))
-        self.batch_idx = 0
-        ### END YOUR SOLUTION
-        return self
+        return LoaderIterator(self.dataset, self.batch_size, self.shuffle)
 
-    def __next__(self):
-        ### BEGIN YOUR SOLUTION
-        if self.batch_idx >= len(self.ordering):
+    def __len__(self):
+        return len(self.dataset)
+
+class LoaderIterator:
+    def __init__(self, dataset, batch_size, shuffle) :
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        if self.shuffle:
+            self.random_indices = np.arange(len(self.dataset))
+            np.random.shuffle(self.random_indices)
+        self.batch_random_indices = np.array_split(self.random_indices, range(batch_size, len(dataset), batch_size), axis = 0)
+        self.cur_batch = 0
+        
+    def __next__(self) :
+        if (self.cur_batch < len(self.batch_random_indices)) :
+            data_batch  = self.dataset[self.batch_random_indices[self.cur_batch]]
+            self.cur_batch += 1
+            #data_batch: img, label
+            return [Tensor(single) for single in data_batch]
+        else:
             raise StopIteration
-        batch_indices = self.ordering[self.batch_idx]
-        self.batch_idx += 1
-        datas = self.dataset[batch_indices]
-        #return (batch_indices_len, H, W, 1) and (b_i_len, labels_num)
-        #return Tensor(datas[0]), Tensor(datas[1])
-        return [Tensor(data) for data in datas]
-       
-       
-        ### END YOUR SOLUTION
-
