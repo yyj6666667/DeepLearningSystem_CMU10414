@@ -302,7 +302,7 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        assert set(new_axes == set(range(self.ndim))), "easy, just to make sure the passed-in axes is legal"
+        assert set(new_axes) == set(range(self.ndim)), "easy, just to make sure the passed-in axes is legal"
         ## hh, 只需要改变shape and strides
         new_shape = tuple(self.shape[iter] for iter in new_axes)
         new_strides = NDArray.compact_strides_yyj(new_shape)
@@ -330,7 +330,22 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        old_shape = self.shape
+        assert all(new_shape[i] == old_shape[i] for i in range(len(old_shape)) if old_shape[i] != 1)
+        pad = len(new_shape) - len(old_shape)
+        assert pad >= 0, "cannot broadcast to fewer dimension"
+        left_aligned_shape = (1,) * pad + old_shape
+        left_aligned_strides = (0, ) * pad + self._strides
+        strides_in_list = list(left_aligned_strides) # tuple can't change , so convert to list
+        for i, (shape_old, shape_new) in enumerate(zip(left_aligned_shape, new_shape)):
+            if shape_old == shape_new:
+                continue
+            if shape_old == 1:
+                strides_in_list[i] = 0
+            else:
+                raise AssertionError(f"cannot broadcast dim {i} : {shape_old} -> {shape_new}")
+
+        return NDArray.as_strided(self, new_shape, tuple(strides_in_list))
         ### END YOUR SOLUTION]
 
     ### Get and set elements

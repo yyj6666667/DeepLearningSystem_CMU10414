@@ -1,6 +1,9 @@
 ---
 debug log：
 ---
+12.29
+* imple broadcast_to with no memory cost, 从shape[i]=1扩展到n， 内存访问步长为0, :)zip is fun, it returns iterator
+
 12.28
 * hw3: ops backend implement，结构操作尽量python处理 ，算数交给底层cpp
 * as_strided： 在handle句柄相同时，设置新的shape和strides， 通过修改元数据生成新的视图， 内存开销为0， 否则alloc memory
