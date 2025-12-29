@@ -42,6 +42,10 @@ debug log：
 ##### 一些零散的先放在这里：
 
 这个仓库的commit records不是很干净， 因为需要不断的上传，方便colab克隆 
+这个仓库干了这么一些事情：
+* 通过构建计算图， 实现**自动微分**功能， 这是反向传播所依赖的基石， 也是被现代深度学习框架pytorch等封装好的基本功能。 主要体现在hw1
+* 实现经典Optimizer like Adam， Regulation Method like Dropout， 叠叠乐的module，等等一揽子深度学习流程基本组成部分， 主要体现在hw2
+* 前面两个基本已经做完， 直到现在，computing backend还是numpy， 那么， 想要支持cpu，gpu端的加速与优化， 当然需要自己动手啦！ 这是hw3的内容
 
 12.15
 * ops文件ndarray, Tensor 的转换，造成困难
