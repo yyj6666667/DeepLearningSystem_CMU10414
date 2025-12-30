@@ -1,6 +1,9 @@
 ---
 debug log：
 ---
+12.30
+* implement getitem(), 根据切片， 返回NDArray视图, 起到虚拟分割的作用
+---
 12.29
 * imple broadcast_to with no memory cost, 从shape[i]=1扩展到n， 内存访问步长为0, :)zip is fun, it returns iterator
 

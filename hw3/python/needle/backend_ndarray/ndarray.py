@@ -412,7 +412,14 @@ class NDArray:
         assert len(slices) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        #返回视图， 不复制数据
+        new_shape = tuple([(slice.stop - slice.start + slice.step - 1)
+                            // slice.step  for slice in slices])
+        new_strides = tuple([slice.step * self._strides[i] 
+                             for i, slice in enumerate(slices)])
+        # 计算初始偏移量
+        # 真是太妙了
+        new_offset = self._offset + reduce(operator.add, (slice.start * self.strides[i] for i, slice in enumerate(slices)), 0) 
         ### END YOUR SOLUTION
 
     def __setitem__(self, idxs: int | slice | tuple[int | slice, ...], other: Union["NDArray", float]) -> None:

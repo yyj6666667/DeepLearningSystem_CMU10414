@@ -56,7 +56,7 @@ class DataLoader:
         self.batch_size = batch_size
         if not self.shuffle:
             self.ordering = np.array_split(np.arange(len(dataset)), 
-                                           range(batch_size, len(dataset), batch_size))
+                                           range(batch_size , len(dataset), batch_size ))
 
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
