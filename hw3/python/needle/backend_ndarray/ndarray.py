@@ -305,7 +305,9 @@ class NDArray:
         assert set(new_axes) == set(range(self.ndim)), "easy, just to make sure the passed-in axes is legal"
         ## hh, 只需要改变shape and strides
         new_shape = tuple(self.shape[iter] for iter in new_axes)
-        new_strides = NDArray.compact_strides_yyj(new_shape)
+        #下面这一句是错误的， 这是假定内存重排过后的结果
+        #new_strides = NDArray.compact_strides_yyj(new_shape)
+        new_strides = tuple(self.shape[iter] for iter in new_axes)
         return NDArray.as_strided(self, new_shape, new_strides)
         ### END YOUR SOLUTION
 
@@ -420,6 +422,8 @@ class NDArray:
         # 计算初始偏移量
         # 真是太妙了
         new_offset = self._offset + reduce(operator.add, (slice.start * self.strides[i] for i, slice in enumerate(slices)), 0) 
+
+        return NDArray.make(new_shape, new_strides, self._device, handle= self._handle, offset= new_offset)       
         ### END YOUR SOLUTION
 
     def __setitem__(self, idxs: int | slice | tuple[int | slice, ...], other: Union["NDArray", float]) -> None:
