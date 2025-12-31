@@ -148,6 +148,18 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<int32_t>
   /// END SOLUTION
 }
 
+void special_add(int n_dim, int order, std::vector<size_t> &record, std::vector<int32_t> shape) {
+  // safety check
+  if (order < 0)
+    return;
+  if (record[order] + 1 < shape[order]) {
+    record[order] += 1;
+  } else {
+    record[order] = 0;
+    special_add(n_dim, order - 1, record, shape);
+  }
+}
+
 void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vector<int32_t> shape,
                    std::vector<int32_t> strides, size_t offset) {
   /**
@@ -165,7 +177,18 @@ void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vect
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  size_t pos;
+  size_t n_dim = shape.size();
+  size_t num  = size;
+  std::vector<size_t> record(n_dim, 0);
+  for (int i = 0; i < num ; i++) {
+    pos = offset;
+    for (int j = 0; j < n_dim; j++) {
+      pos += record[j] * strides[j];
+    }
+    out->ptr[pos] = val;
+    special_add(n_dim, n_dim - 1, record, shape);
+  }
   /// END SOLUTION
 }
 
