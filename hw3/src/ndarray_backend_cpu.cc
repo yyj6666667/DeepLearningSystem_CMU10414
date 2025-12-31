@@ -231,6 +231,47 @@ void ScalarAdd(const AlignedArray& a, scalar_t val, AlignedArray* out) {
  * signatures above.
  */
 
+ #define EWISE_FUNC(func, ops)                                                  \
+    void func(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {\
+      for (size_t i = 0; i < a.size; i++) {                                     \
+        out->ptr[i] = ops(a.ptr[i], b.ptr[i]);                                  \
+      }                                                                         \
+    }                                                                           \
+
+#define SCALAR_FUNC(func, ops)                                                  \
+    void func(const AlignedArray& a, scalar_t value, AlignedArray* out) {         \
+      for (size_t i = 0; i < a.size; i++) {                                     \
+        out->ptr[i] = ops(a.ptr[i], value);                                     \
+      }                                                                         \
+    }                                                                           \
+
+#define SINGLE_FUNC(func, ops)                           \
+ void func(const AlignedArray& a, AlignedArray* out) {   \
+    for (size_t i = 0; i < a.size; i++) {                   \
+      out->ptr[i] = ops(a.ptr[i]);                      \
+    }                                                    \
+ }                                                       \
+
+    EWISE_FUNC(EwiseMul, std::multiplies<scalar_t>());
+    EWISE_FUNC(EwiseDiv, std::divides<scalar_t>());
+    EWISE_FUNC(EwiseMaximum, std::max<scalar_t>);
+    EWISE_FUNC(EwiseEq, std::equal_to<scalar_t>());
+    EWISE_FUNC(EwiseGe, std::greater_equal<scalar_t>());
+    SINGLE_FUNC(EwiseLog, std::log);
+    SINGLE_FUNC(EwiseExp, std::exp);
+    SINGLE_FUNC(EwiseTanh, std::tanh);
+
+    SCALAR_FUNC(ScalarMul, std::multiplies<float>());
+    SCALAR_FUNC(ScalarDiv, std::divides<float>());
+    SCALAR_FUNC(ScalarPower, std::pow);
+    SCALAR_FUNC(ScalarMaximum, std::max<float>);
+    SCALAR_FUNC(ScalarEq, std::equal_to<float>());
+    SCALAR_FUNC(ScalarGe, std::greater_equal<float>());
+
+
+
+
+
 
 void Matmul(const AlignedArray& a, const AlignedArray& b, AlignedArray* out, uint32_t m, uint32_t n,
             uint32_t p) {
