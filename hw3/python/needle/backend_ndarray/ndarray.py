@@ -307,7 +307,7 @@ class NDArray:
         new_shape = tuple(self.shape[iter] for iter in new_axes)
         #下面这一句是错误的， 这是假定内存重排过后的结果
         #new_strides = NDArray.compact_strides_yyj(new_shape)
-        new_strides = tuple(self.shape[iter] for iter in new_axes)
+        new_strides = tuple(self._strides[iter] for iter in new_axes)
         return NDArray.as_strided(self, new_shape, new_strides)
         ### END YOUR SOLUTION
 

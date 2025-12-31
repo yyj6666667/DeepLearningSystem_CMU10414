@@ -62,7 +62,41 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shap
    *  function will implement here, so we won't repeat this note.)
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  size_t n_dim = shape.size();
+  size_t total_elems = 1;
+  for (size_t iter : shape) {
+    total_elems *= static_cast<size_t>(iter);
+  }
+  assert(out->size == total_elems);
+
+  std::vector<size_t> index(n_dim, 0);
+
+  for (size_t cnt = 0; cnt < total_elems; cnt++) {
+    size_t pos = offset;
+    // 计算single item pos in origin "a"
+    for (size_t i = 0; i < n_dim; i++) {
+      pos += index[i] * strides[i];
+    }
+    // out is compacted , so only need to cnt++
+    out->ptr[cnt] = a.ptr[pos];
+    
+    //以下管理进位
+    for (size_t dim = n_dim - 1; dim >= 0; dim--) {
+      index[dim]++;
+      if (index[dim] < shape[dim]) {
+        //成功加一 
+        break;
+      } else {
+        //进位了
+        index[dim] = 0;
+        //会进入下一个dim-1， 给它加1
+        if (dim == 0) {
+          // 进入危险条件， 说明遍历完了
+          return;
+        }
+      }
+    }
+  }
   /// END SOLUTION
 }
 

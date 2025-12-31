@@ -5,7 +5,7 @@ debug log：
 * implement getitem(), 根据切片， 返回NDArray视图, 起到虚拟分割的作用
 ``` python
 new_strides = NDArray.compact_strides_yyj(new_shape)
-new_strides = tuple(self.shape[iter] for iter in new_axes) #真闹心啊， 这两句
+new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， 这两句
 ```
 ---
 12.29
