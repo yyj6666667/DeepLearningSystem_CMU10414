@@ -113,7 +113,38 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<int32_t>
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  size_t n_dim = shape.size();
+  std::vector<size_t> idx(n_dim, 0);
+  size_t item_num = a.size;
+
+  //赋值
+  for (int i = 0; i < item_num; i++) {
+    //calc pos in out
+    size_t pos_out_i = offset;
+    for (int j = 0; j < n_dim; j++) {
+      pos_out_i += idx[j] * strides[j];
+    }
+
+    out->ptr[pos_out_i] = a.ptr[i];
+
+    //idx update
+    for (int i = n_dim - 1; i >= 0; i--) {
+      idx[i] ++;
+      if (idx[i] < shape[i]) {
+        // 正常
+        break;
+      } else {
+        // 进位
+        idx[i] = 0;
+
+        // 终结P
+        if (i == 0) {
+          printf("遍历完成\n");
+          return;
+        }
+      }
+    }
+  }
   /// END SOLUTION
 }
 

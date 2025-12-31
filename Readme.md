@@ -1,6 +1,11 @@
 ---
 debug log：
 ---
+12.31. 2025 最后一天
+* cpu backend support: 
+  * compact() 无序存储的array 赋给紧凑存储
+  * EwiseSetitem() 紧凑存储的array赋给无序, 当前实现n_dim = 0时有下溢风险
+---
 12.30
 * implement getitem(), 根据切片， 返回NDArray视图, 起到虚拟分割的作用
 ``` python
