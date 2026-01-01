@@ -1,6 +1,9 @@
 ---
 debug log：
 ---
+1.1
+* cpu: add reduce, naive_Matmul
+---
 12.31. 2025 最后一天
 * cpu backend support: 
   * compact() 无序存储的array 赋给紧凑存储

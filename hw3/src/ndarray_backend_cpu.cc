@@ -325,12 +325,19 @@ inline void AlignedDot(const float* __restrict__ a,
    *   out: compact 2D array of size TILE x TILE to write to
    */
 
+   //做内存对齐， 方便机器做simd(single instruction multi data)
   a = (const float*)__builtin_assume_aligned(a, TILE * ELEM_SIZE);
   b = (const float*)__builtin_assume_aligned(b, TILE * ELEM_SIZE);
   out = (float*)__builtin_assume_aligned(out, TILE * ELEM_SIZE);
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  for (int i = 0; i < TILE; i++) {
+    for (int j = 0; j < TILE; j++) {
+      for (int k = 0; k < TILE; k++) {
+        *(out + i * TILE + j) += (*(a + i * TILE + k)) * (*(b + j + k * TILE));
+      }
+    }
+  }
   /// END SOLUTION
 }
 
@@ -356,7 +363,20 @@ void MatmulTiled(const AlignedArray& a, const AlignedArray& b, AlignedArray* out
    *
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  int new_m = m / TILE;
+  int new_n = n / TILE;
+  int new_p = p / TILE;
+  std::fill(out->ptr, out->ptr + out->size, 0.0f);
+  for (int i = 0; i < new_m; i++) {
+    float *a_dot = &a.ptr[i * TILE * n]; // note: step for a_dot is TILE
+    for (int j = 0; j < new_p; j++) {
+      float *b_dot = &b.ptr[j * TILE]; //
+      float *out_dot = &out->ptr[i * TILE * p + j * TILE];
+      for (int k = 0; k < new_n; k++) {
+        AlignedDot(a_dot + k * TILE, b_dot + k * TILE * p, out_dot);
+      }
+    }
+  }
   /// END SOLUTION
 }
 
