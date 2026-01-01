@@ -3,6 +3,7 @@ debug log：
 ---
 1.1
 * cpu: add reduce, naive_Matmul
+* debug : MatMUL_Tile, passed in a 4-dimension array, the memory is continuous only in each Tile, and i wrongly treat it as 2-d type of continuous
 ---
 12.31. 2025 最后一天
 * cpu backend support: 

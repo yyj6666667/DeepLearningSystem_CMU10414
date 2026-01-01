@@ -366,14 +366,15 @@ void MatmulTiled(const AlignedArray& a, const AlignedArray& b, AlignedArray* out
   int new_m = m / TILE;
   int new_n = n / TILE;
   int new_p = p / TILE;
+  int mem_tile = TILE * TILE;
   std::fill(out->ptr, out->ptr + out->size, 0.0f);
   for (int i = 0; i < new_m; i++) {
-    float *a_dot = &a.ptr[i * TILE * n]; // note: step for a_dot is TILE
+    float *a_dot = &a.ptr[i * new_n * mem_tile]; // note: step for a_dot is TILE
     for (int j = 0; j < new_p; j++) {
-      float *b_dot = &b.ptr[j * TILE]; //
-      float *out_dot = &out->ptr[i * TILE * p + j * TILE];
+      float *b_dot = &b.ptr[j * mem_tile]; //
+      float *out_dot = &out->ptr[i * new_p * mem_tile + j * mem_tile];
       for (int k = 0; k < new_n; k++) {
-        AlignedDot(a_dot + k * TILE, b_dot + k * TILE * p, out_dot);
+        AlignedDot(a_dot + k * mem_tile, b_dot + k * new_p * mem_tile, out_dot);
       }
     }
   }
