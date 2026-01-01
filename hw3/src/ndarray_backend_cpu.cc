@@ -478,8 +478,8 @@ PYBIND11_MODULE(ndarray_backend_cpu, m) {
   m.def("ewise_exp", EwiseExp);
   m.def("ewise_tanh", EwiseTanh);
 
-  // m.def("matmul", Matmul);
-  // m.def("matmul_tiled", MatmulTiled);
+   m.def("matmul", Matmul);
+   m.def("matmul_tiled", MatmulTiled);
 
    m.def("reduce_max", ReduceMax);
    m.def("reduce_sum", ReduceSum);
