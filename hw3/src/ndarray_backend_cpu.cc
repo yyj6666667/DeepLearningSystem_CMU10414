@@ -285,11 +285,22 @@ void Matmul(const AlignedArray& a, const AlignedArray& b, AlignedArray* out, uin
    *   out: compact 2D array of size m x p to write the output to
    *   m: rows of a / out
    *   n: columns of a / rows of b
-   *   p: columns of b / out
+   *   p: columns of b / out  
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  for (int i = 0; i < m; i++) {
+    scalar_t *row = &a.ptr[i * n];
+    for (int j = 0; j < p; j++) {
+      scalar_t *col = &b.ptr[j];
+      // do the vector-multi to get one single element in result
+      scalar_t single_res = 0;
+      for (int k = 0; k < n; k++) {
+        single_res += (*(row + k)) * (*(col + k * p));
+      }
+      out->ptr[i * p + j] = single_res; 
+    }
+  }
   /// END SOLUTION
 }
 
@@ -360,7 +371,15 @@ void ReduceMax(const AlignedArray& a, AlignedArray* out, size_t reduce_size) {
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  int n_iter = out->size;
+  for (int i = 0; i < n_iter; i++) {
+    scalar_t max_tem = a.ptr[i *reduce_size + 0];
+    for (int j = 1; j < reduce_size; j++) {
+      max_tem = std::max<scalar_t>(max_tem, a.ptr[i * reduce_size + j]);
+    }
+    out->ptr[i] = max_tem;
+  }
+
   /// END SOLUTION
 }
 
@@ -375,7 +394,14 @@ void ReduceSum(const AlignedArray& a, AlignedArray* out, size_t reduce_size) {
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  int n_iter = out->size;
+  for (int i = 0; i < n_iter; i++) {
+    scalar_t max_tem = 0;
+    for (int j = 0; j < reduce_size; j++) {
+      max_tem += a.ptr[i * reduce_size + j];
+    }
+    out->ptr[i] = max_tem;
+  }
   /// END SOLUTION
 }
 
@@ -435,6 +461,6 @@ PYBIND11_MODULE(ndarray_backend_cpu, m) {
   // m.def("matmul", Matmul);
   // m.def("matmul_tiled", MatmulTiled);
 
-  // m.def("reduce_max", ReduceMax);
-  // m.def("reduce_sum", ReduceSum);
+   m.def("reduce_max", ReduceMax);
+   m.def("reduce_sum", ReduceSum);
 }
