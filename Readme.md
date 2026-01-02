@@ -1,6 +1,9 @@
 ---
 debug log：
 ---
+1.2
+* cuda: add naive MatMul
+---
 1.1
 * cpu: add reduce, naive_Matmul
 * debug : MatMUL_Tile, passed in a 4-dimension array, the memory is continuous only in each Tile, and i wrongly treat it as 2-d type of continuous

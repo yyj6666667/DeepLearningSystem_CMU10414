@@ -237,7 +237,36 @@ void ScalarAdd(const CudaArray& a, scalar_t val, CudaArray* out) {
 ////////////////////////////////////////////////////////////////////////////////
 // Elementwise and scalar operations
 ////////////////////////////////////////////////////////////////////////////////
+__global__ void MatmulKernel(const scalar_t* a, const scalar_t* b, scalar_t *out, uint32_t M, uint32_t N, uint32_t P) {
+    __shared__ scalar_t tile_a[TILE][TILE];
+    __shared__ scalar_t tile_b[TILE][TILE];
 
+    int row = blockIdx.y * TILE + threadIdx.y;
+    int col = blockIdx.x * TILE + threadIdx.x;
+
+    scalar_t ans = 0.0f;
+
+    for (int i = 0; i < N; i += TILE) {
+      // for block a:
+      //a_init
+      int a_col = i + threadIdx.x;
+      tile_a[threadIdx.y][threadIdx.x] = (row < M && a_col < N) ? a[row * N + a_col] : 0.0f;
+
+      int b_row = i + threadIdx.y;
+      tile_b[threadIdx.y][threadIdx.x] = (b_row < N && col < P) ? b[b_row * P + col] : 0.0f;
+
+      //notice that grid * block is only logical , to do that, you need 线程调度
+      __syncthreads();
+      
+      for (int j = 0; j < TILE; j++) {
+        ans += tile_a[threadIdx.y][j] * tile_b[j][threadIdx.x];
+      }
+
+      __syncthreads();
+    }
+    if (row < M && col < P)
+      out[row * P + col] = ans;
+}
 
 void Matmul(const CudaArray& a, const CudaArray& b, CudaArray* out, uint32_t M, uint32_t N,
             uint32_t P) {
@@ -264,7 +293,10 @@ void Matmul(const CudaArray& a, const CudaArray& b, CudaArray* out, uint32_t M, 
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  dim3 grid((M + TILE - 1) / TILE, (P + TILE - 1) / TILE);
+  dim3 block(TILE, TILE);
+
+  MatmulKernel<<<grid, block>>>(a.ptr, b.ptr, out->ptr, M, N, P);
   /// END SOLUTION
 }
 
@@ -370,7 +402,7 @@ PYBIND11_MODULE(ndarray_backend_cuda, m) {
   // m.def("ewise_exp", EwiseExp);
   // m.def("ewise_tanh", EwiseTanh);
 
-  // m.def("matmul", Matmul);
+   m.def("matmul", Matmul);
 
   // m.def("reduce_max", ReduceMax);
   // m.def("reduce_sum", ReduceSum);
