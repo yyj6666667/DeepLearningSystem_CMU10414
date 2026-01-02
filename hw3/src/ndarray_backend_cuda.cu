@@ -241,25 +241,25 @@ __global__ void MatmulKernel(const scalar_t* a, const scalar_t* b, scalar_t *out
     __shared__ scalar_t tile_a[TILE][TILE];
     __shared__ scalar_t tile_b[TILE][TILE];
 
-    int row = blockIdx.y * TILE + threadIdx.y;
-    int col = blockIdx.x * TILE + threadIdx.x;
+    int row = blockIdx.x * TILE + threadIdx.x;
+    int col = blockIdx.y * TILE + threadIdx.y;
 
     scalar_t ans = 0.0f;
 
     for (int i = 0; i < N; i += TILE) {
       // for block a:
       //a_init
-      int a_col = i + threadIdx.x;
-      tile_a[threadIdx.y][threadIdx.x] = (row < M && a_col < N) ? a[row * N + a_col] : 0.0f;
+      int a_col = i + threadIdx.y;
+      tile_a[threadIdx.x][threadIdx.y] = (row < M && a_col < N) ? a[row * N + a_col] : 0.0f;
 
-      int b_row = i + threadIdx.y;
-      tile_b[threadIdx.y][threadIdx.x] = (b_row < N && col < P) ? b[b_row * P + col] : 0.0f;
+      int b_row = i + threadIdx.x;
+      tile_b[threadIdx.x][threadIdx.y] = (b_row < N && col < P) ? b[b_row * P + col] : 0.0f;
 
       //notice that grid * block is only logical , to do that, you need 线程调度
       __syncthreads();
       
       for (int j = 0; j < TILE; j++) {
-        ans += tile_a[threadIdx.y][j] * tile_b[j][threadIdx.x];
+        ans += tile_a[threadIdx.x][j] * tile_b[j][threadIdx.y];
       }
 
       __syncthreads();
