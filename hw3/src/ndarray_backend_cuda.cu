@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 namespace needle {
 namespace cuda {
@@ -277,6 +278,107 @@ void ScalarAdd(const CudaArray& a, scalar_t val, CudaArray* out) {
  * functions (however you want to do so, as long as the functions match the proper)
  * signatures above.
  */
+//begin
+ __device__ scalar_t Mul(scalar_t x, scalar_t y) {return x * y;}
+ __device__ scalar_t Div(scalar_t x, scalar_t y) {return x / y;}
+ __device__ scalar_t Power(scalar_t x, scalar_t y) {return std::pow(x, y);}
+ __device__ scalar_t Maximum(scalar_t x, scalar_t y) {return (x > y) ? x : y;}
+ __device__ scalar_t Eq (scalar_t x, scalar_t y) {return (x == y);}
+ __device__ scalar_t Ge (scalar_t x, scalar_t y) {return (x >= y);}
+ //唉， 不想写了， log， exp， tanh还是直接用<cmath> 吧
+ 
+
+// 首先实现EWISE， 双对象，部分
+ #define EWISE_KERNEL(kernel_name, opr)                                \
+  __global__ void kernel_name(scalar_t *a, scalar_t *b, scalar_t *out, \
+    size_t size) {                                                      \
+      size_t idx = threadIdx.x + blockDim.x * blockIdx.x;               \
+      if (idx < size) {                                                 \
+        out[idx] = opr(a[idx], b[idx]);                                 \
+      }                                                                 \
+  }                                                                     \
+
+#define EWISE_HOST(host_name, kernel_name)                                    \
+ void host_name(const CudaArray& a, const CudaArray& b, CudaArray* out) {     \
+  CudaDims dim = CudaOneDim(out->size);                                        \
+  kernel_name<<<dim.grid, dim.block>>>(a.ptr, b.ptr, out->ptr, out->size);   \
+ }                                                                            \
+
+EWISE_KERNEL(EwiseMulKernel, Mul);
+EWISE_HOST(EwiseMul, EwiseMulKernel);
+
+EWISE_KERNEL(EwiseDivKernel, Div);
+EWISE_HOST(EwiseDiv, EwiseDivKernel);
+
+EWISE_KERNEL(EMaxKernel, Maximum);
+EWISE_HOST(EwiseMaximum, EMaxKernel);
+
+EWISE_KERNEL(EwiseEqKernel, Eq);
+EWISE_HOST(EwiseEq, EwiseEqKernel);
+
+EWISE_KERNEL(EwiseGeKernel, Ge);
+EWISE_HOST(EwiseGe, EwiseGeKernel);
+
+//实现 SCALAR 部分
+#define SCALAR_KERNEL(kernel_name, ops)                             \
+__global__  void kernel_name(scalar_t *a, scalar_t value,           \
+  scalar_t *out, size_t size) {                                    \
+  size_t idx = threadIdx.x + blockDim.x * blockIdx.x;               \
+  if (idx < size)                                                   \
+    out[idx] = ops(a[idx], value);                                    \
+}                                                                    \
+
+#define SCALAR_FUNC(func_name, kernel_name)                       \
+void func_name(const CudaArray& a, scalar_t value, CudaArray* out) {  \
+  CudaDims dim = CudaOneDim(out->size);                                \
+  kernel_name<<<dim.grid, dim.block>>>(a.ptr, value, out->ptr, out->size);\
+}\
+
+SCALAR_KERNEL(SMulK, Mul);
+SCALAR_FUNC(ScalarMul, SMulK);
+
+SCALAR_KERNEL(SDivK, Div);
+SCALAR_FUNC(ScalarDiv, SDivK);
+
+SCALAR_KERNEL(ScalarPowerKernel, Power);
+SCALAR_FUNC(ScalarPower, ScalarPowerKernel);
+
+SCALAR_KERNEL(SMaxK, Maximum);
+SCALAR_FUNC(ScalarMaximum, SMaxK);
+
+SCALAR_KERNEL(SEqK, Eq);
+SCALAR_FUNC(ScalarEq, SEqK);
+
+SCALAR_KERNEL(SGeK, Ge);
+SCALAR_FUNC(ScalarGe, SGeK);
+
+// 实现single object 部分
+// log， exp， tanh
+#define SINGLE_KERNEL(kernel_name, ops)                                 \
+__global__ void kernel_name(scalar_t *a, scalar_t *out, size_t size) {  \
+  size_t idx = threadIdx.x + blockIdx.x * blockDim.x;                   \
+  if (idx < size) {                                                     \
+    out[idx] = ops(a[idx]);                                             \
+  }                                                                     \
+}                                                                       \
+
+
+#define SINGLE_HOST(func_name, kernel_name)                              \
+void func_name(const CudaArray& a, CudaArray* out) {                     \
+  CudaDims dim = CudaOneDim(out->size);                                    \
+  kernel_name<<<dim.grid, dim.block>>>(a.ptr, out->ptr, out->size);         \
+}                                                                          \
+
+SINGLE_KERNEL(ELogK, std::log);
+SINGLE_HOST(EwiseLog, ELogK);
+
+SINGLE_KERNEL(EExpK, std::exp);
+SINGLE_HOST(EwiseExp, EExpK);
+
+SINGLE_KERNEL(ETanhK, std::tanh);
+SINGLE_HOST(EwiseTanh, ETanhK);
+
+//end
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -430,25 +532,23 @@ PYBIND11_MODULE(ndarray_backend_cuda, m) {
   m.def("ewise_add", EwiseAdd);
   m.def("scalar_add", ScalarAdd);
 
-  // m.def("ewise_mul", EwiseMul);
-  // m.def("scalar_mul", ScalarMul);
-  // m.def("ewise_div", EwiseDiv);
-  // m.def("scalar_div", ScalarDiv);
-  // m.def("scalar_power", ScalarPower);
-
-  // m.def("ewise_maximum", EwiseMaximum);
-  // m.def("scalar_maximum", ScalarMaximum);
-  // m.def("ewise_eq", EwiseEq);
-  // m.def("scalar_eq", ScalarEq);
-  // m.def("ewise_ge", EwiseGe);
-  // m.def("scalar_ge", ScalarGe);
-
-  // m.def("ewise_log", EwiseLog);
-  // m.def("ewise_exp", EwiseExp);
-  // m.def("ewise_tanh", EwiseTanh);
+   m.def("ewise_mul", EwiseMul);
+   m.def("scalar_mul", ScalarMul);
+   m.def("ewise_div", EwiseDiv);
+   m.def("scalar_div", ScalarDiv);
+   m.def("scalar_power", ScalarPower);
+   m.def("ewise_maximum", EwiseMaximum);
+   m.def("scalar_maximum", ScalarMaximum);
+   m.def("ewise_eq", EwiseEq);
+   m.def("scalar_eq", ScalarEq);
+   m.def("ewise_ge", EwiseGe);
+   m.def("scalar_ge", ScalarGe);
+   m.def("ewise_log", EwiseLog);
+   m.def("ewise_exp", EwiseExp);
+   m.def("ewise_tanh", EwiseTanh);
 
    m.def("matmul", Matmul);
 
-  // m.def("reduce_max", ReduceMax);
-  // m.def("reduce_sum", ReduceSum);
+   m.def("reduce_max", ReduceMax);
+   m.def("reduce_sum", ReduceSum);
 }

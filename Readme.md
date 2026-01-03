@@ -1,12 +1,28 @@
 ---
 debug log：
 ---
+1.4
+* 又是函数宏， 理解更深了吧, KERNEL 和 HOST 一开始声明顺序反了
+* opr 需要预先创建， host_name, kernel_name, 通过函数宏直接填进去, 真爽
+* const CudaArray& a 里的 & 是“引用”，不是取地址, 语义上相当于 C 的 “传只读指针” (const CudaArray* a)，但用法更像别名，函数体直接写 a.foo 而不是 a->foo
+* EwiseOps等函数中，CudaArray* out 输出参数习惯用指针， 主要是工程上易读性的考虑：
+  * 本函数对目标的所有权： “new / delete 不归我管， 只负责写入”
+  * 提示写入
+  * 可以合法位nullptr， 更容易在内部检查或者抛错
+* 增添了如下调用的GPU端实现
+
+    <img src="images/image copy 2.png" alt="alt text" width="400">
+
+* 这是自从hw2 model， data， optimizer 分块实现以来码的最爽的一次
+
+---
+
 1.3
 * 容易混的地方： CudaArray虽然由cpu创建， 调用构造函数过后显存分配在GPU端
 * cuda: EwiseSetItem, 注意grid的设置通过BASE_THREAD_NUM, 尽量发挥硬件的并行性能，　“一个线程处理一个元素”
 * 启动 kernel的时候， 实参会被拷贝到GPU上的参数空间， 所以CudaVec已经拷贝过去了
 * *a, *out, 就必须手动分配到GPU
-
+---
 1.2
 * cuda: add naive MatMul
 ---
