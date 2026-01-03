@@ -98,7 +98,17 @@ __global__ void CompactKernel(const scalar_t* a, scalar_t* out, size_t size, Cud
   size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  if (gid >= size) return;
+  size_t a_loc = offset;
+  size_t temp  = gid;
+  //从后往前处理, temp = temp / (shape[j] * shape[j + 1] * ... * shape[last])
+  // 这样shape[j - 1] 成为 temp的最小粒度， 所以可以通过 temp % shape[i]得到idx_i  
+  for (int i = shape.size - 1; i >= 0; i--) {
+    size_t idx_i = temp % shape.data[i];
+    a_loc += idx_i * strides.data[i];
+    temp /= shape.data[i];
+  }
+  out[gid] = a[a_loc];
   /// END SOLUTION
 }
 
@@ -125,7 +135,26 @@ void Compact(const CudaArray& a, CudaArray* out, std::vector<int32_t> shape,
                                          VecToCuda(strides), offset);
 }
 
+CudaDims SetDims_yyj(size_t size) {
+  CudaDims dim;
+  size_t dim_num = (size + BASE_THREAD_NUM - 1) / BASE_THREAD_NUM;
+  dim.grid = dim3(dim_num, 1, 1);
+  dim.block = dim3(BASE_THREAD_NUM, 1, 1);
+  return dim;
+}
 
+__global__ void EwiseSetKernel(const scalar_t *a,  scalar_t *out, size_t size, CudaVec shape, CudaVec strides, size_t offset) {
+  size_t single = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t loc_out = offset;
+  size_t temp  = single;
+  if (single >= size) return;
+  for (int i = shape.size - 1; i >= 0; i--) {
+    size_t num_shape = temp % shape.data[i];
+    loc_out += num_shape * strides.data[i];
+    temp /= shape.data[i];
+  }
+  out[loc_out] = a[single];
+}
 
 void EwiseSetitem(const CudaArray& a, CudaArray* out, std::vector<int32_t> shape,
                   std::vector<int32_t> strides, size_t offset) {
@@ -141,7 +170,8 @@ void EwiseSetitem(const CudaArray& a, CudaArray* out, std::vector<int32_t> shape
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  CudaDims dim = SetDims_yyj(a.size);
+  EwiseSetKernel<<<dim.grid, dim.block>>>(a.ptr, out->ptr, a.size, VecToCuda(shape), VecToCuda(strides), offset);
   /// END SOLUTION
 }
 

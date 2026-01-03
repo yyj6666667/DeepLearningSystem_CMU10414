@@ -1,6 +1,12 @@
 ---
 debug log：
 ---
+1.3
+* 容易混的地方： CudaArray虽然由cpu创建， 调用构造函数过后显存分配在GPU端
+* cuda: EwiseSetItem, 注意grid的设置通过BASE_THREAD_NUM, 尽量发挥硬件的并行性能，　“一个线程处理一个元素”
+* 启动 kernel的时候， 实参会被拷贝到GPU上的参数空间， 所以CudaVec已经拷贝过去了
+* *a, *out, 就必须手动分配到GPU
+
 1.2
 * cuda: add naive MatMul
 ---
