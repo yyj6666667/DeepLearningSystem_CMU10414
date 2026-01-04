@@ -3,10 +3,10 @@ debug log：
 ---
 1.4
 * 又是函数宏， 理解更深了吧, KERNEL 和 HOST 一开始声明顺序反了
-* opr 需要预先创建， host_name, kernel_name, 通过函数宏直接填进去, 真爽
+* opr 需要预先创建， host_name, kernel_name, 通过函数宏直接填进去
 * const CudaArray& a 里的 & 是“引用”，不是取地址, 语义上相当于 C 的 “传只读指针” (const CudaArray* a)，但用法更像别名，函数体直接写 a.foo 而不是 a->foo
 * EwiseOps等函数中，CudaArray* out 输出参数习惯用指针， 主要是工程上易读性的考虑：
-  * 本函数对目标的所有权： “new / delete 不归我管， 只负责写入”
+  * 本函数对目标的所有权： “不管new / delete， 只负责写入”
   * 提示写入
   * 可以合法位nullptr， 更容易在内部检查或者抛错
 * 增添了如下调用的GPU端实现
