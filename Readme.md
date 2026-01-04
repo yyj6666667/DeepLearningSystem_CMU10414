@@ -1,6 +1,8 @@
 ---
 debug log：
 ---
+1.4 白天
+* add ReduceMax, ReduceSum in cuda, hw3 finished
 1.4
 * 又是函数宏， 理解更深了吧, KERNEL 和 HOST 一开始声明顺序反了
 * opr 需要预先创建， host_name, kernel_name, 通过函数宏直接填进去

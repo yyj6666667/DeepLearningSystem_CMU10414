@@ -487,7 +487,7 @@ __global__ void ReduceSumKernel(const scalar_t *a, scalar_t *out, size_t out_siz
 
   if (idx >= out_size) return;
   scalar_t sum = 0.0f;
-  scalar_t *a_idx = a + idx * reduce_size;
+  const scalar_t *a_idx = a + idx * reduce_size;
   for (int i = 0; i < reduce_size; i++) {
     sum += *(a_idx + i);
   }
