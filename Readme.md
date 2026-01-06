@@ -3,9 +3,12 @@ debug log：
 ---
 1.6
 * 开始将hw1,2,3 做的准备移植到hw4
+---
 1.4 白天
 * add ReduceMax, ReduceSum in cuda, hw3 finished
+
 1.4
+
 * 又是函数宏， 理解更深了吧, KERNEL 和 HOST 一开始声明顺序反了
 * opr 需要预先创建， host_name, kernel_name, 通过函数宏直接填进去
 * const CudaArray& a 里的 & 是“引用”，不是取地址, 语义上相当于 C 的 “传只读指针” (const CudaArray* a)，但用法更像别名，函数体直接写 a.foo 而不是 a->foo
@@ -88,7 +91,7 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 这个仓库干了这么一些事情：
 * 通过构建计算图， 实现**自动微分**功能， 这是反向传播所依赖的基石， 也是被现代深度学习框架pytorch等封装好的基本功能。 主要体现在hw1
 * 实现经典Optimizer like Adam， Regulation Method like Dropout， 叠叠乐的module，等等一揽子深度学习流程基本组成部分， 主要体现在hw2
-* 前面两个基本已经做完， 直到现在，computing backend还是numpy， 那么， 想要支持cpu，gpu端的加速与优化， 当然需要自己动手啦！ 这是hw3的内容
+* 前面两个基本已经做完， 直到现在，computing backend还是numpy， 那么， 想要支持cpu，gpu端的加速（其实是慢速，比起标准库的实现， 能够做到“没那么慢”）， 当然需要自己动手啦！ 这是hw3的内容
 
 12.15
 * ops文件ndarray, Tensor 的转换，造成困难
