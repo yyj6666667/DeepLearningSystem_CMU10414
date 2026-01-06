@@ -1,6 +1,8 @@
 ---
 debug log：
 ---
+1.6
+* 开始将hw1,2,3 做的准备移植到hw4
 1.4 白天
 * add ReduceMax, ReduceSum in cuda, hw3 finished
 1.4
