@@ -1,13 +1,28 @@
+
+这个仓库干了这么一些事情：
 ---
+* 通过构建计算图， 实现**自动微分**功能， 这是反向传播所依赖的基石，主要体现在hw1
+* 实现经典Optimizers (Adam, Momentum...)， Regulation Method (Dropout, Corp...)， Dataset 和 DataLoader 分离， 叠叠乐的module，等等深度学习系统基本组成部分， 主要体现在hw2
+* 支持cpu，gpu端
+的加速（其实是慢速，比起标准库的实现， 能够做到“没那么慢”）， 当然需要自己动手啦！ 这是hw3的
+内容
+
+commit records不是很干净， 因为需要不断的上传，方便colab克隆 
+
+准备把重要片段implement 放到README.md 中
+
 debug log：
 ---
+* watch lecture17, update notes
+---
 1.6
-* 开始将hw1,2,3 做的准备移植到hw4
+* 开始将hw1,2,3 移植到hw4
+* 代码重构的过程中， 我发现ops_logarithmic.py 部分logsumexp, 指定axes的功能实现的不是很清楚。 暂时先实现二维版本
+* fun fact: max(target, axis = 2, keepdims = true), max.shape = (2, 3, 4, 5, 6), 对这种多维max是怎么生效的呢？
+   * result.shape = (2, 3, 1, 5, 6), 单独看axis = 2 的位置， 有5 * 6 = 30个子元素，对于30个位置， 同时有4个平行的兄弟元素进行比较 
 ---
 1.4 白天
 * add ReduceMax, ReduceSum in cuda, hw3 finished
-
-1.4
 
 * 又是函数宏， 理解更深了吧, KERNEL 和 HOST 一开始声明顺序反了
 * opr 需要预先创建， host_name, kernel_name, 通过函数宏直接填进去
@@ -87,11 +102,6 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 
 ##### 一些零散的先放在这里：
 
-这个仓库的commit records不是很干净， 因为需要不断的上传，方便colab克隆 
-这个仓库干了这么一些事情：
-* 通过构建计算图， 实现**自动微分**功能， 这是反向传播所依赖的基石， 也是被现代深度学习框架pytorch等封装好的基本功能。 主要体现在hw1
-* 实现经典Optimizer like Adam， Regulation Method like Dropout， 叠叠乐的module，等等一揽子深度学习流程基本组成部分， 主要体现在hw2
-* 前面两个基本已经做完， 直到现在，computing backend还是numpy， 那么， 想要支持cpu，gpu端的加速（其实是慢速，比起标准库的实现， 能够做到“没那么慢”）， 当然需要自己动手啦！ 这是hw3的内容
 
 12.15
 * ops文件ndarray, Tensor 的转换，造成困难

@@ -3,6 +3,7 @@ from ..autograd import NDArray
 from ..autograd import Op, Tensor, Value, TensorOp
 from ..autograd import TensorTuple, TensorTupleOp
 
+#already import , just directly use it
 from .ops_mathematic import *
 
 
@@ -19,7 +20,7 @@ class LogSoftmax(TensorOp):
         ### BEGIN YOUR SOLUTION
         input = node.inputs[0]
         part_1 = Tensor([1]).broadcast_to(input.shape)
-        softmax = ops.exp(node) 
+        softmax = exp(node) 
         grad = out_grad - softmax * (ops.summation(out_grad, axes = (1,)).reshape((input.shape[0], 1)).broadcast_to(input.shape))
         return grad
         ### END YOUR SOLUTION
@@ -29,19 +30,35 @@ def logsoftmax(a: Tensor) -> Tensor:
     return LogSoftmax()(a)
 
 
+# 对它微分直接得到softmax哈哈， 循环了
 class LogSumExp(TensorOp):
     def __init__(self, axes: Optional[tuple] = None) -> None:
         self.axes = axes
 
     def compute(self, Z: NDArray) -> NDArray:
         ### BEGIN YOUR SOLUTION
-        Z_max = array_api.max(Z, axis = self.axes, keepdims = True)
-        Z_stable = Z - Z_max
-        Z_exp = array_api.exp(Z_stable)
-        Z_exp_sum = array_api.sum(Z_exp, axis = self.axes, keepdims = True)
-        logsumexp = array_api.log(Z_exp_sum) + Z_max
-        Z_max_final = array_api.max(Z, axis = self.axes, keepdims= False)
-        return logsumexp.reshape(Z_max_final.shape)
+        Z_max = max(Z, axis = self.axes, keepdims = True)
+        Z_stable = Z - Z_max.broadcast_to(Z.shape)
+        log_sum_exp = log( 
+                              sum( 
+                                 exp(Z_stable), 
+                                 axes=self.axes, 
+                                 keepdims = True
+                                 )                 
+                        )
+        result = Z_max + log_sum_exp
+        return result
+        
+            #这里屏蔽一个原先的二维版本
+            #drop max out to prevent exp explode
+            # 命名时前面的Z代表这是有多组x_i 组成的矩阵
+             #n_dim = Z.shape[0]
+             #Z = Tensor(Z)      
+             #Z_max_each_row = max(Z, axis = 1).reshape((n_dim, 1))
+             #Z_row_minus_max_each_row = Z - Z_max_each_row.broadcast_to(Z.shape)
+             #Z_logsumexp_each_row = log( summation(exp(Z_row_minus_max_each_row), axes=(1,)).reshape((n_dim, 1)) ) # shape: (n_dim, 1)
+             #result = Z_max_each_row + Z_logsumexp_each_row
+             #return result.detach()
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad: Tensor, node: Tensor):
