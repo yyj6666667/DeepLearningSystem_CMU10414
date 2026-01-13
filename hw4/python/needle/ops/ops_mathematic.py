@@ -243,8 +243,7 @@ class Summation(TensorOp):
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        #这个是真的没有搞懂
+        ### BEGIN YOUR SOLUTIOU
         input_shape = node.inputs[0].shape
 
         if self.axes is None:
@@ -360,19 +359,37 @@ class ReLU(TensorOp):
         return (Tensor(input_data > 0)) * out_grad
         ### END YOUR SOLUTION
 
-
 def relu(a):
     return ReLU()(a)
+
+#add Max
+class Max(TensorOp):
+    def __init__(self, axis = None, keepdims = False):
+        self.axis = axis
+        self.keepdims = keepdims
+
+    def compute(self, a):
+        return array_api.max(a)
+    
+    def gradient(self, out_grad, node):
+        forward_res = node.realize_cached_data()
+        mask_one    = node.input[0] == forward_res.reshape(-1, 1) #有点问题， 如果有多个最大值容易造成误差
+        return mask_one * out_grad
+
+def max(a):
+    return Max()(a)
 
 class Tanh(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        exp_2x = array_api.exp(2 * a)
+        return (exp_2x - 1) / (exp_2x + 1)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        node_data = node.realize_cached_data()
+        return out_grad * (1 - node_data ** 2).detach()
         ### END YOUR SOLUTION
 
 
@@ -392,12 +409,20 @@ class Stack(TensorOp):
 
     def compute(self, args: TensorTuple) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        #
+        new_shape = list(args[0].shape).insert(self.axis, len(args))
+        empty_in_new_shape = array_api.empty(new_shape, dtype=args[0].dtype, device = args[0].device)
+        for i, arg in enumerate(args):
+            slices = [slice(None)] * len(new_shape)  #slices is a data form of "[x, y, z, ...]"
+                                                     # slice(None) means [:]
+            slices[self.axis] = i
+            empty_in_new_shape[tuple(slices)] = arg 
+        return empty_in_new_shape
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return split(out_grad, axis = self.axis)
         ### END YOUR SOLUTION
 
 

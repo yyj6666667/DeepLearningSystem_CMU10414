@@ -1,18 +1,22 @@
-
-这个仓库干了这么一些事情：
----
-* 通过构建计算图， 实现**自动微分**功能， 这是反向传播所依赖的基石，主要体现在hw1
-* 实现经典Optimizers (Adam, Momentum...)， Regulation Method (Dropout, Corp...)， Dataset 和 DataLoader 分离， 叠叠乐的module，等等深度学习系统基本组成部分， 主要体现在hw2
-* 支持cpu，gpu端
-的加速（其实是慢速，比起标准库的实现， 能够做到“没那么慢”）， 当然需要自己动手啦！ 这是hw3的
-内容
-
-commit records不是很干净， 因为需要不断的上传，方便colab克隆 
-
-准备把重要片段implement 放到README.md 中
-
 debug log：
 ---
+1.13
+* 移植的时候出现问题：
+![alt text](images/14.png)
+  为了计算图的延续， 必须在BACKEND添加max， 支持反向传播
+* add TensorOp Stack, Max, Tanh, 其中Stack最不好写， Stack.gradient还没有想明白
+关键代码：
+```py
+ new_shape = list(args[0].shape).insert(self.axis, len(args))
+ empty_in_new_shape = array_api.empty(new_shape, dtype=args[0].dtype, device = args[0].device)
+ for i, arg in enumerate(args):
+     slices = [slice(None)] * len(new_shape)  #slices is a data form of "[x, y, z, ...]"
+                                              # slice(None) means [:]
+     slices[self.axis] = i
+     empty_in_new_shape[tuple(slices)] = arg 
+ return empty_in_new_shape
+```
+1.12
 * watch lecture17, update notes
 ---
 1.6
@@ -38,6 +42,53 @@ debug log：
 * 这是自从hw2 model， data， optimizer 分块实现以来码的最爽的一次
 
 ---
+
+这个仓库干了这么一些事情：
+---
+* 通过构建计算图， 实现**自动微分**功能， 这是反向传播所依赖的基石，主要体现在hw1
+* 实现经典Optimizers (Adam, Momentum...)， Regulation Method (Dropout, Corp...)， Dataset 和 DataLoader 分离， 叠叠乐的module，等
+等深度学习系统基本组成部分， 主要体现在hw2
+* 支持cpu，gpu端
+的加速（其实是慢速，比起标准库的实现， 能够做到“没那么慢”）， 当然需要自己动手啦！ 这是hw3的
+内容
+
+commit records不是很干净， 因为需要不断的上传，方便colab克隆 
+
+以下是在实践过程中值得深思的代码：
+`Ops Summation``ops_mathematic.py`
+```py
+class Summation(TensorOp):
+    def __init__(self, axes: Optional[tuple] = None):
+        self.axes = axes
+
+    def compute(self, a):
+        ### BEGIN YOUR SOLUTION
+        return array_api.sum(a, axis = self.axes)
+        ### END YOUR SOLUTION
+
+    def gradient(self, out_grad, node):
+        ### BEGIN YOUR SOLUTIOU
+        input_shape = node.inputs[0].shape
+        # 可以不只沿着一个维度做summation
+        if self.axes is None:
+            axes = tuple(range(len(input_shape)))
+        elif isinstance(self.axes, int):
+            axes = (self.axes,)
+        else:
+            axes = self.axes
+
+        target_shape = list(out_grad.shape)
+        for axis in sorted(axes):
+            target_shape.insert(axis, 1)
+
+        out_grad = out_grad.reshape(target_shape)
+        # 相当于 out_grad * all_ones
+        return broadcast_to(out_grad, input_shape)
+```
+* 无独有偶： 为什么`Transpose`,` Reshape` 做逆运算就是微分了？ 为什么`Broadcast_to`的微分恰好是`Summation`? 不是想当然的！ 因为我们考察的是每个元素在forward过程中的贡献！！ 这样就能理解为什么抽象的非数值操作也有微分的概念。
+
+* Pytorch 提供的计算图功能， 在`autograd.py`里面被山寨， numpy提供的数据封装形式Ndarray(见 `ndarray_backend_numpy.py`), 在`ndarray.py`里面被山寨，新的`ndarray.py`下的数据， 可以用c, cuda底层语言进行比特级别的管理和优化 
+
 
 1.3
 * 容易混的地方： CudaArray虽然由cpu创建， 调用构造函数过后显存分配在GPU端
