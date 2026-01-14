@@ -151,7 +151,6 @@ class DivScalar(TensorOp):
 
 
 def divide_scalar(a, scalar):
-    #return DivScalar(scalar)(a) 日历仙人， 首先， 继承了__call__, 真离谱，DivScalar(scalar)返回op对象
     op = DivScalar(scalar)
     #由于继承了__call__, 这里直接调用op对象就行了
     return op(a)
@@ -243,7 +242,6 @@ class Summation(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        #这个是真的没有搞懂
         input_shape = node.inputs[0].shape
 
         if self.axes is None:

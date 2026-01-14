@@ -31,13 +31,6 @@ class RandomCrop(Transform):
         self.padding = padding
 
     def __call__(self, img):
-        """ Zero pad and then randomly crop an image.
-        Args:
-             img: H x W x C NDArray of an image
-        Return 
-            H x W x C NDArray of cliped image
-        Note: generate the image shifted by shift_x, shift_y specified below
-        """
         shift_x, shift_y = np.random.randint(low=-self.padding, high=self.padding+1, size=2)
         ### BEGIN YOUR SOLUTION
         H, W = img.shape[0], img.shape[1]

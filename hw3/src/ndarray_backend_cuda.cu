@@ -285,10 +285,7 @@ void ScalarAdd(const CudaArray& a, scalar_t val, CudaArray* out) {
  __device__ scalar_t Maximum(scalar_t x, scalar_t y) {return (x > y) ? x : y;}
  __device__ scalar_t Eq (scalar_t x, scalar_t y) {return (x == y);}
  __device__ scalar_t Ge (scalar_t x, scalar_t y) {return (x >= y);}
- //唉， 不想写了， log， exp， tanh还是直接用<cmath> 吧
  
-
-// 首先实现EWISE， 双对象，部分
  #define EWISE_KERNEL(kernel_name, opr)                                \
   __global__ void kernel_name(scalar_t *a, scalar_t *b, scalar_t *out, \
     size_t size) {                                                      \

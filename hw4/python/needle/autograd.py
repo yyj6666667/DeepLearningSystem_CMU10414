@@ -366,68 +366,39 @@ class Tensor(Value):
     __rmul__ = __mul__
 
 def compute_gradient_of_variables(self_tensor, out_grad):
-    """Take gradient of output node with respect to each node in node_list.
-
-    Store the computed result in the grad field of each Variable.
-    """
-    ### BEGIN YOUR SOLUTION
-    #创建一个字典 Dict[Tensor, List[Tensor]]
     node_out_grads = {}
     node_out_grads[self_tensor] = [out_grad]
-
-    #根据output_tensor顺藤摸瓜
     nodes_topo = find_topo_sort([self_tensor])
     
     for node in nodes_topo:
-        #为什么到这里才做single node 的grad summation呢？ 
-        #因为到这里才能确保此node 的out_grads都收集到了！！
         node.grad = sum_node_list(node_out_grads[node])
 
-        #叶子结点
         if node.op is None:
             continue
 
-        #往前计算新的, 不管单个多个， 统一封装成tuple
         formers_grads = node.op.gradient_as_tuple(node.grad, node)
 
-        #一个一个塞给前面
         for former_node, former_grad in zip(node.inputs, formers_grads):
-            #还没有， 就创建
             if former_node not in node_out_grads:
                 node_out_grads[former_node] = []
             node_out_grads[former_node].append(former_grad)
-        
-    ### END YOUR SOLUTION
-
 
 def find_topo_sort(node_list: List[Value]) -> List[Value]:
-    """Given a list of nodes, return a topological sort list of nodes ending in them.
-
-    A simple algorithm is to do a post-order DFS traversal on the given nodes,
-    going backwards based on input edges. Since a node is added to the ordering
-    after all its predecessors are traversed due to post-order DFS, we get a topological
-    sort.
-    """
-    ### BEGIN YOUR SOLUTION
     visited = set()
     topo_order = []
     for node in node_list:
         topo_sort_dfs(node, visited, topo_order)
-    #从后往前
     return list(reversed(topo_order))
-    ### END YOUR SOLUTION
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
-    ### BEGIN YOUR SOLUTION
     if node in visited :
         return
     visited.add(node)
     for input in node.inputs:
         topo_sort_dfs(input, visited, topo_order)
     topo_order.append(node)
-    ### END YOUR SOLUTION
 
 
 ##############################

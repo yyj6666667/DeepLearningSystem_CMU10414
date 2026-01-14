@@ -32,7 +32,6 @@ class SGD(Optimizer):
                 self.u[single_param] = 0
             self.u[single_param] = self.momentum * self.u[single_param] + (1 - self.momentum) * grad
             single_param.data = single_param.data - self.lr * self.u[single_param]
-            
         ### END YOUR SOLUTION
 
     def clip_grad_norm(self, max_norm=0.25):

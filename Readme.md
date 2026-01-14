@@ -1,4 +1,354 @@
-debug log：
+
+以下是在实践过程中部分有功能代表性的代码,均为独立**手写**：
+
+numpy backend in gpu
+见`hw3/src/ndarray_backend.cu`
+```cpp
+/*   实现后端调用
+*   - EwiseMul, ScalarMul
+ *   - EwiseDiv, ScalarDiv
+ *   - ScalarPower
+ *   - EwiseMaximum, ScalarMaximum
+ *   - EwiseEq, ScalarEq
+ *   - EwiseGe, ScalarGe
+ *   - EwiseLog
+ *   - EwiseExp
+ *   - EwiseTanh*/
+//begin
+ __device__ scalar_t Mul(scalar_t x, scalar_t y) {return x * y;}
+ __device__ scalar_t Div(scalar_t x, scalar_t y) {return x / y;}
+ __device__ scalar_t Power(scalar_t x, scalar_t y) {return std::pow(x, y);}
+ __device__ scalar_t Maximum(scalar_t x, scalar_t y) {return (x > y) ? x : y;}
+ __device__ scalar_t Eq (scalar_t x, scalar_t y) {return (x == y);}
+ __device__ scalar_t Ge (scalar_t x, scalar_t y) {return (x >= y);}
+ 
+ #define EWISE_KERNEL(kernel_name, opr)                                \
+  __global__ void kernel_name(scalar_t *a, scalar_t *b, scalar_t *out, \
+    size_t size) {                                                      \
+      size_t idx = threadIdx.x + blockDim.x * blockIdx.x;               \
+      if (idx < size) {                                                 \
+        out[idx] = opr(a[idx], b[idx]);                                 \
+      }                                                                 \
+  }                                                                     \
+
+#define EWISE_HOST(host_name, kernel_name)                                    \
+ void host_name(const CudaArray& a, const CudaArray& b, CudaArray* out) {     \
+  CudaDims dim = CudaOneDim(out->size);                                        \
+  kernel_name<<<dim.grid, dim.block>>>(a.ptr, b.ptr, out->ptr, out->size);   \
+ }                                                                            \
+
+EWISE_KERNEL(EwiseMulKernel, Mul);
+EWISE_HOST(EwiseMul, EwiseMulKernel);
+
+EWISE_KERNEL(EwiseDivKernel, Div);
+EWISE_HOST(EwiseDiv, EwiseDivKernel);
+
+EWISE_KERNEL(EMaxKernel, Maximum);
+EWISE_HOST(EwiseMaximum, EMaxKernel);
+
+EWISE_KERNEL(EwiseEqKernel, Eq);
+EWISE_HOST(EwiseEq, EwiseEqKernel);
+
+EWISE_KERNEL(EwiseGeKernel, Ge);
+EWISE_HOST(EwiseGe, EwiseGeKernel);
+
+//实现 SCALAR 部分
+#define SCALAR_KERNEL(kernel_name, ops)                             \
+__global__  void kernel_name(scalar_t *a, scalar_t value,           \
+  scalar_t *out, size_t size) {                                    \
+  size_t idx = threadIdx.x + blockDim.x * blockIdx.x;               \
+  if (idx < size)                                                   \
+    out[idx] = ops(a[idx], value);                                    \
+}                                                                    \
+
+#define SCALAR_FUNC(func_name, kernel_name)                       \
+void func_name(const CudaArray& a, scalar_t value, CudaArray* out) {  \
+  CudaDims dim = CudaOneDim(out->size);                                \
+  kernel_name<<<dim.grid, dim.block>>>(a.ptr, value, out->ptr, out->size);\
+}\
+
+SCALAR_KERNEL(SMulK, Mul);
+SCALAR_FUNC(ScalarMul, SMulK);
+
+SCALAR_KERNEL(SDivK, Div);
+SCALAR_FUNC(ScalarDiv, SDivK);
+
+SCALAR_KERNEL(ScalarPowerKernel, Power);
+SCALAR_FUNC(ScalarPower, ScalarPowerKernel);
+
+SCALAR_KERNEL(SMaxK, Maximum);
+SCALAR_FUNC(ScalarMaximum, SMaxK);
+
+SCALAR_KERNEL(SEqK, Eq);
+SCALAR_FUNC(ScalarEq, SEqK);
+
+SCALAR_KERNEL(SGeK, Ge);
+SCALAR_FUNC(ScalarGe, SGeK);
+
+// 实现single object 部分
+// log， exp， tanh
+#define SINGLE_KERNEL(kernel_name, ops)                                 \
+__global__ void kernel_name(scalar_t *a, scalar_t *out, size_t size) {  \
+  size_t idx = threadIdx.x + blockIdx.x * blockDim.x;                   \
+  if (idx < size) {                                                     \
+    out[idx] = ops(a[idx]);                                             \
+  }                                                                     \
+}                                                                       \
+
+
+#define SINGLE_HOST(func_name, kernel_name)                              \
+void func_name(const CudaArray& a, CudaArray* out) {                     \
+  CudaDims dim = CudaOneDim(out->size);                                    \
+  kernel_name<<<dim.grid, dim.block>>>(a.ptr, out->ptr, out->size);         \
+}                                                                          \
+
+SINGLE_KERNEL(ELogK, std::log);
+SINGLE_HOST(EwiseLog, ELogK);
+
+SINGLE_KERNEL(EExpK, std::exp);
+SINGLE_HOST(EwiseExp, EExpK);
+
+SINGLE_KERNEL(ETanhK, std::tanh);
+SINGLE_HOST(EwiseTanh, ETanhK);
+
+```
+反向传播中的拓扑排序 `autograd.py` 
+```py
+def compute_gradient_of_variables(self_tensor, out_grad):
+    node_out_grads = {}
+    node_out_grads[self_tensor] = [out_grad]
+    nodes_topo = find_topo_sort([self_tensor])
+    
+    for node in nodes_topo:
+        node.grad = sum_node_list(node_out_grads[node])
+
+        if node.op is None:
+            continue
+
+        formers_grads = node.op.gradient_as_tuple(node.grad, node)
+
+        for former_node, former_grad in zip(node.inputs, formers_grads):
+            if former_node not in node_out_grads:
+                node_out_grads[former_node] = []
+            node_out_grads[former_node].append(former_grad)
+
+def find_topo_sort(node_list: List[Value]) -> List[Value]:
+    visited = set()
+    topo_order = []
+    for node in node_list:
+        topo_sort_dfs(node, visited, topo_order)
+    return list(reversed(topo_order))
+
+
+def topo_sort_dfs(node, visited, topo_order):
+    """Post-order DFS"""
+    if node in visited :
+        return
+    visited.add(node)
+    for input in node.inputs:
+        topo_sort_dfs(input, visited, topo_order)
+    topo_order.append(node)
+```
+TensorOp类`ops_mathematic.py`
+```py
+class Summation(TensorOp):
+    def __init__(self, axes: Optional[tuple] = None):
+        self.axes = axes
+
+    def compute(self, a):
+        ### BEGIN YOUR SOLUTION
+        return array_api.sum(a, axis = self.axes)
+        ### END YOUR SOLUTION
+
+    def gradient(self, out_grad, node):
+        ### BEGIN YOUR SOLUTIOU
+        input_shape = node.inputs[0].shape
+        # 可以不只沿着一个维度做summation
+        if self.axes is None:
+            axes = tuple(range(len(input_shape)))
+        elif isinstance(self.axes, int):
+            axes = (self.axes,)
+        else:
+            axes = self.axes
+
+        target_shape = list(out_grad.shape)
+        for axis in sorted(axes):
+            target_shape.insert(axis, 1)
+
+        out_grad = out_grad.reshape(target_shape)
+        # 相当于 out_grad * all_ones
+        return broadcast_to(out_grad, input_shape)
+```
+```py
+class LogSumExp(TensorOp):
+    def __init__(self, axes: Optional[tuple] = None) -> None:
+        self.axes = axes
+
+    def compute(self, Z: NDArray) -> NDArray:
+        ### BEGIN YOUR SOLUTION
+        Z_max = array_api.max(Z, axis = self.axes, keepdims = True)
+        Z_stable = Z - Z_max
+        Z_exp = array_api.exp(Z_stable)
+        Z_exp_sum = array_api.sum(Z_exp, axis = self.axes, keepdims = True)
+        logsumexp = array_api.log(Z_exp_sum) + Z_max
+        Z_max_final = array_api.max(Z, axis = self.axes, keepdims= False)
+        return logsumexp.reshape(Z_max_final.shape)
+
+        ### END YOUR SOLUTION
+
+    def gradient(self, out_grad: Tensor, node: Tensor):
+        ### BEGIN YOUR SOLUTION
+        Z = node.inputs[0]
+
+        shape = list(Z.shape)
+        axes = self.axes if self.axes is not None else tuple(range(len(shape)))
+
+        for ax in axes:
+            shape[ax] = 1
+
+        node_new = node.reshape(shape).broadcast_to(Z.shape)
+        grad = ops.exp(Z - node_new)
+        out_grad_ = out_grad.reshape(shape).broadcast_to(Z.shape)
+        return out_grad_ * grad
+        ### END YOUR SOLUTION
+```
+Module类 `nn_basic.py`
+```py
+class SoftmaxLoss(Module):
+    def forward(self, logits: Tensor, y: Tensor) -> Tensor:
+        ### BEGIN YOUR SOLUTION
+        log_softmax = ops.logsoftmax(logits)
+        batch_size = logits.shape[0]
+        y_hot = init.one_hot(logits.shape[1], y)
+        Z_hot = log_softmax * y_hot
+        loss = -ops.summation(ops.summation(Z_hot, axes = (1,))) / batch_size
+        return loss
+        ### END YOUR SOLUTION
+```
+Optimizer类 `optim.py`
+```py
+class SGD(Optimizer):
+    def __init__(self, params, lr=0.01, momentum=0.0, weight_decay=0.0):
+        super().__init__(params)
+        self.lr = lr
+        self.momentum = momentum
+        self.u = {} #储存动量
+        self.weight_decay = weight_decay
+
+    def step(self):
+        ### BEGIN YOUR SOLUTION
+        for single_param in self.params:
+            grad = single_param.grad.data + self.weight_decay * single_param.data
+            if single_param not in self.u:
+                self.u[single_param] = 0
+            self.u[single_param] = self.momentum * self.u[single_param] + (1 - self.momentum) * grad
+            single_param.data = single_param.data - self.lr * self.u[single_param]
+        ### END YOUR SOLUTION
+```
+Adam Optimizer's step part:
+```py
+def step(self):
+    ### BEGIN YOUR SOLUTION
+    self.t += 1
+    for param in self.params:
+        #l2 norm:
+        grad = param.grad.data + self.weight_decay * param.data
+        if param not in self.m:
+            self.m[param] = 0
+        if param not in self.v:
+            self.v[param] = 0
+        self.m[param] = self.beta1 * self.m[param] + (1 - self.beta1) * grad
+        self.v[param] = self.beta2 * self.v[param] + (1 - self.beta2) * (grad ** 2)
+        m_hat = self.m[param] / (1 - self.beta1 ** self.t)
+        v_hat = self.v[param] / (1 - self.beta2 ** self.t)
+        tem_grad = m_hat / (v_hat ** 0.5 + self.eps)
+        param.data = param.data - np.float32(self.lr) * ndl.Tensor(tem_grad, dtype = param.data.dtype)
+    ### END YOUR SOLUTION
+```
+DataSet 类
+```py
+class MNISTDataset(Dataset):
+    def __init__(
+        self,
+        image_filename: str,
+        label_filename: str,
+        transforms: Optional[List] = None,
+    ):
+        ### BEGIN YOUR SOLUTION
+        with gzip.open(image_filename, 'rb') as f:
+            magic, num, rows, cols = struct.unpack('>4I', f.read(16))
+            images = np.frombuffer(f.read(), dtype = np.uint8)
+            images = images.reshape((num, rows, cols, 1))
+            images = images.astype(np.float32) / 255.0
+
+        with gzip.open(label_filename, 'rb') as f:
+            magic, num = struct.unpack('>2I', f.read(8))
+            labels = np.frombuffer(f.read(), dtype = np.uint8)
+            labels = labels.reshape((num, ))
+        
+        self.images = images
+        self.labels = labels
+        self.transforms = transforms
+
+        ### END YOUR SOLUTION
+
+    def __getitem__(self, index) -> object:
+        ### BEGIN YOUR SOLUTION
+        img = self.images[index]
+        label = self.labels[index]
+        if isinstance(index, (list, np.ndarray, tuple)):
+            img = np.stack([self.apply_transforms(single) for single in img], axis = 0)
+        else:
+            img = self.apply_transforms(img)
+
+        return img, label
+        ### END YOUR SOLUTION
+
+    def __len__(self) -> int:
+        ### BEGIN YOUR SOLUTION
+        return self.images.shape[0]
+        ### END YOUR SOLUTION
+```
+build of ResidualBlock and MLPResNet
+训练脚本见`hw2/apps/mlp_resnet.py`
+```py
+def ResidualBlock(dim, hidden_dim, norm=nn.BatchNorm1d, drop_prob=0.1):
+    ### BEGIN YOUR SOLUTION
+    sequence_1 =  nn.Sequential(
+                      nn.Linear(dim, hidden_dim),
+                      norm(hidden_dim),
+                      nn.ReLU(),
+                      nn.Dropout(drop_prob),
+                      nn.Linear(hidden_dim, dim),
+                      norm(dim)
+                  )
+    sequence_2 = nn.Sequential(
+                      nn.Residual(sequence_1),
+                      nn.ReLU()
+    )
+    return sequence_2
+    ### END YOUR SOLUTION
+
+def MLPResNet(
+    dim,
+    hidden_dim=100,
+    num_blocks=3,
+    num_classes=10,
+    norm=nn.BatchNorm1d,
+    drop_prob=0.1,
+):
+    ### BEGIN YOUR SOLUTION
+    sequence = nn.Sequential(
+                nn.Linear(dim, hidden_dim),
+                nn.ReLU(),
+                *[ResidualBlock(hidden_dim, hidden_dim//2, norm, drop_prob) for _ in range(num_blocks)],
+                nn.Linear(hidden_dim, num_classes)
+    )
+    return sequence
+    ### END YOUR SOLUTION
+```
+
+construct and debug log：
 ---
 1.13
 * 移植的时候出现问题：
@@ -42,53 +392,7 @@ debug log：
 * 这是自从hw2 model， data， optimizer 分块实现以来码的最爽的一次
 
 ---
-
-这个仓库干了这么一些事情：
----
-* 通过构建计算图， 实现**自动微分**功能， 这是反向传播所依赖的基石，主要体现在hw1
-* 实现经典Optimizers (Adam, Momentum...)， Regulation Method (Dropout, Corp...)， Dataset 和 DataLoader 分离， 叠叠乐的module，等
-等深度学习系统基本组成部分， 主要体现在hw2
-* 支持cpu，gpu端
-的加速（其实是慢速，比起标准库的实现， 能够做到“没那么慢”）， 当然需要自己动手啦！ 这是hw3的
-内容
-
 commit records不是很干净， 因为需要不断的上传，方便colab克隆 
-
-以下是在实践过程中值得深思的代码：
-`Ops Summation``ops_mathematic.py`
-```py
-class Summation(TensorOp):
-    def __init__(self, axes: Optional[tuple] = None):
-        self.axes = axes
-
-    def compute(self, a):
-        ### BEGIN YOUR SOLUTION
-        return array_api.sum(a, axis = self.axes)
-        ### END YOUR SOLUTION
-
-    def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTIOU
-        input_shape = node.inputs[0].shape
-        # 可以不只沿着一个维度做summation
-        if self.axes is None:
-            axes = tuple(range(len(input_shape)))
-        elif isinstance(self.axes, int):
-            axes = (self.axes,)
-        else:
-            axes = self.axes
-
-        target_shape = list(out_grad.shape)
-        for axis in sorted(axes):
-            target_shape.insert(axis, 1)
-
-        out_grad = out_grad.reshape(target_shape)
-        # 相当于 out_grad * all_ones
-        return broadcast_to(out_grad, input_shape)
-```
-* 无独有偶： 为什么`Transpose`,` Reshape` 做逆运算就是微分了？ 为什么`Broadcast_to`的微分恰好是`Summation`? 不是想当然的！ 因为我们考察的是每个元素在forward过程中的贡献！！ 这样就能理解为什么抽象的非数值操作也有微分的概念。
-
-* Pytorch 提供的计算图功能， 在`autograd.py`里面被山寨， numpy提供的数据封装形式Ndarray(见 `ndarray_backend_numpy.py`), 在`ndarray.py`里面被山寨，新的`ndarray.py`下的数据， 可以用c, cuda底层语言进行比特级别的管理和优化 
-
 
 1.3
 * 容易混的地方： CudaArray虽然由cpu创建， 调用构造函数过后显存分配在GPU端
@@ -160,15 +464,14 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 * hw1 all pass , not totally understood
 * __call__, __init__, init__, hhhhhh
 * 实现nn.Linear, 对__add__ 重载 和 broadcast 手动实现有了更深的理解
+* 无独有偶： 为什么`Transpose`,` Reshape` 做逆运算就是微分了？ 为什么`Broadcast_to`的微分恰好是`Summation`? 不是想当然的！ 因为我们考察的是每个元素在forward过程中的贡献！！ 这样就能理解为什么抽象的非数值操作也有微分的概念。
+
 ---
 12.16
 * keepdims, self.axis, .reshape(shape).broadcast_to(XX.shape)  
     give you an exp :
 <img src="images/image-2.png" alt="alt text" width="200">
 
-* 注意传参： axis是从0开始数的 ， 注意区分和shape的区别
-
-<img src="images/image-3.png" alt="alt text" width="500">
 
 12.17
 * 完善nn_basic.py，kaimingNorm, kaimingUniform

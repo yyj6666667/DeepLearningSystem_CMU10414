@@ -369,7 +369,7 @@ class Max(TensorOp):
         self.keepdims = keepdims
 
     def compute(self, a):
-        return array_api.max(a)
+        return array_api.max(a, axis = self.axis, keepdims=self.keepdims)
     
     def gradient(self, out_grad, node):
         forward_res = node.realize_cached_data()

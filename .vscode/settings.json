@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
         "./hw2/python"
-    ]
+    ],
+    "cmake.sourceDirectory": "C:/Users/yangyujie/Desktop/DeepLearningSystem_CMU10414/hw3"
 }
