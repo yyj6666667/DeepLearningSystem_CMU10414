@@ -35,7 +35,7 @@ class LogSumExp(TensorOp):
     def __init__(self, axes: Optional[tuple] = None) -> None:
         self.axes = axes
 
-    def compute(self, Z: NDArray) -> NDArray:
+    def compute(self, Z) -> Tensor:
         ### BEGIN YOUR SOLUTION
         Z_max = max(Z, axis = self.axes, keepdims = True)
         Z_stable = Z - Z_max.broadcast_to(Z.shape)

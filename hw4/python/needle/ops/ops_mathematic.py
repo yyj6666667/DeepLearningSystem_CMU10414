@@ -170,6 +170,7 @@ class Transpose(TensorOp):
             new_axes = list(range(len(a.shape)))
             new_axes[self.axes[0]], new_axes[self.axes[1]] = new_axes[self.axes[1]], new_axes[self.axes[0]]
         res = NDArray.permute(a, new_axes)
+        return res
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
@@ -408,7 +409,8 @@ class Stack(TensorOp):
     def compute(self, args: TensorTuple) -> Tensor:
         ### BEGIN YOUR SOLUTION
         #
-        new_shape = list(args[0].shape).insert(self.axis, len(args))
+        tem_shape = list(args[0].shape)
+        new_shape = tem_shape[:self.axis] + [len(args)] + tem_shape[self.axis:]
         empty_in_new_shape = array_api.empty(new_shape, dtype=args[0].dtype, device = args[0].device)
         for i, arg in enumerate(args):
             slices = [slice(None)] * len(new_shape)  #slices is a data form of "[x, y, z, ...]"
