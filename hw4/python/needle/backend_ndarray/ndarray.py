@@ -263,7 +263,7 @@ class NDArray:
 
         ### BEGIN YOUR SOLUTION
         assert self.size == reduce(operator.mul, new_shape, 1) , "total size must be same"
-        res = NDArray.as_strided(self, new_shape, NDArray.compact_strides_yyj(new_shape))
+        res = NDArray.as_strided(self, new_shape, NDArray.compact_strides(new_shape))
         return res
         ### END YOUR SOLUTION
 
@@ -293,7 +293,7 @@ class NDArray:
         ## hh, 只需要改变shape and strides
         new_shape = tuple(self.shape[iter] for iter in new_axes)
         #下面这一句是错误的， 这是假定内存重排过后的结果
-        #new_strides = NDArray.compact_strides_yyj(new_shape)
+        #new_strides = NDArray.compact_strides(new_shape)
         new_strides = tuple(self._strides[iter] for iter in new_axes)
         return NDArray.as_strided(self, new_shape, new_strides)
         ### END YOUR SOLUTION
