@@ -164,14 +164,12 @@ class Transpose(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
         if self.axes is None:
-            # Swap last two dimensions
-            axe = tuple(range(len(a.shape) - 2)) + (len(a.shape) - 1, len(a.shape) - 2)
-        else:
-            # axes is a tuple of two axes to swap, need to build full permutation
-            axe = list(range(len(a.shape)))
-            axe[self.axes[0]], axe[self.axes[1]] = axe[self.axes[1]], axe[self.axes[0]]
-            axe = tuple(axe)
-        return array_api.transpose(a, axes=axe)
+            #默认交换沿着内存增长方向的粒度最细的两个维度（即最后两个维度）
+            new_axes = tuple(range(len(a.shape) - 2), len(a.shape) - 1, len(a.shape) - 2)
+        else :
+            new_axes = list(range(len(a.shape)))
+            new_axes[self.axes[0]], new_axes[self.axes[1]] = new_axes[self.axes[1]], new_axes[self.axes[0]]
+        res = NDArray.permute(a, new_axes)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
@@ -389,7 +387,7 @@ class Tanh(TensorOp):
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
         node_data = node.realize_cached_data()
-        return out_grad * (1 - node_data ** 2).detach()
+        return out_grad * (1 - node_data ** 2)
         ### END YOUR SOLUTION
 
 

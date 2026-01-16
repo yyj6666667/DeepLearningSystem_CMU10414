@@ -1,6 +1,12 @@
 
 1.16
 * add TensorOp stack and split, 互为微分逆运算
+* debug， TensorOp transpose needs to fit in the new NDArray backend version, 现在的transpose通过改变NDArray的视图实现（查看numpy core, 也是这么干的），当然，要动内存也可以，不过要添置NDArray调用。 内存的分配通过cpp文件的AlignedArray内置的构造函数实现
+* 用户态代码 -> NDArray -> Device -> pybind11绑定层 -> cpp / cuda底层  
+    调用链示意：
+    <img src="./images/15.png" alt="alt text" width="400">
+
+---
 
 以下是在实践过程中部分有功能代表性的代码,均为独立**手写**：
 
@@ -115,6 +121,51 @@ SINGLE_KERNEL(ETanhK, std::tanh);
 SINGLE_HOST(EwiseTanh, ETanhK);
 
 ```
+压缩到连续内存
+```cpp
+void Compact(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shape,
+             std::vector<int32_t> strides, size_t offset) {
+  /// BEGIN SOLUTION
+  size_t n_dim = shape.size();
+  size_t total_elems = 1;
+  for (size_t iter : shape) {
+    total_elems *= static_cast<size_t>(iter);
+  }
+  assert(out->size == total_elems);
+
+  std::vector<size_t> index(n_dim, 0);
+
+  for (size_t cnt = 0; cnt < total_elems; cnt++) {
+    size_t pos = offset;
+    // 计算single item pos in origin "a"
+    for (size_t i = 0; i < n_dim; i++) {
+      pos += index[i] * strides[i];
+    }
+    // out is compacted , so only need to cnt++
+    out->ptr[cnt] = a.ptr[pos];
+    
+    //以下管理进位
+    for (size_t dim = n_dim - 1; dim >= 0; dim--) {
+      index[dim]++;
+      if (index[dim] < shape[dim]) {
+        //成功加一 
+        break;
+      } else {
+        //进位了
+        index[dim] = 0;
+        //会进入下一个dim-1， 给它加1
+        if (dim == 0) {
+          // 进入危险条件， 说明遍历完了
+          return;
+        }
+      }
+    }
+  }
+  /// END SOLUTION
+}
+
+```
+---
 反向传播中的拓扑排序 `autograd.py` 
 ```py
 def compute_gradient_of_variables(self_tensor, out_grad):

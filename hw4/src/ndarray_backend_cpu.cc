@@ -139,7 +139,7 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<int32_t>
 
         // 终结P
         if (i == 0) {
-          printf("遍历完成\n");
+          //printf("遍历完成\n");
           return;
         }
       }

@@ -7,6 +7,7 @@ import numpy as np
 
 from . import ndarray_backend_numpy
 from . import ndarray_backend_cpu  # type: ignore[attr-defined]
+#yyj: 用 C++/CUDA 编写 的代码, 通过 pybind11/ctypes 编译成 Python 可调用的模块
 
 
 # math.prod not in Python 3.7
@@ -686,3 +687,7 @@ def sum(a: NDArray, axis: int | tuple[int] | list[int] | None = None, keepdims: 
 
 def flip(a: NDArray, axes: tuple[int, ...]) -> NDArray:
     return a.flip(axes)
+
+#yyj add:
+def transpose(a: NDArray, axes: tuple[int, ...]) -> NDArray:
+    return a.permute(axes)
