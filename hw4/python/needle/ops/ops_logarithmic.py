@@ -42,7 +42,7 @@ class LogSumExp(TensorOp):
         log_sum_exp = array_api.log( 
                               array_api.sum( 
                                  array_api.exp(Z_stable), 
-                                          axes=self.axes, 
+                                          axis=self.axes, 
                                           keepdims = True
                                  )                 
                         )

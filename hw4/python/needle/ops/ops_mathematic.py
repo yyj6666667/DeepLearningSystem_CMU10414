@@ -165,7 +165,7 @@ class Transpose(TensorOp):
         ### BEGIN YOUR SOLUTION
         if self.axes is None:
             #默认交换沿着内存增长方向的粒度最细的两个维度（即最后两个维度）
-            new_axes = tuple(range(len(a.shape) - 2), len(a.shape) - 1, len(a.shape) - 2)
+            new_axes = tuple(range(len(a.shape) - 2)) + (len(a.shape) - 1, len(a.shape) - 2)
         else :
             new_axes = list(range(len(a.shape)))
             new_axes[self.axes[0]], new_axes[self.axes[1]] = new_axes[self.axes[1]], new_axes[self.axes[0]]
