@@ -376,8 +376,8 @@ class Max(TensorOp):
         mask_one    = node.input[0] == forward_res.reshape(-1, 1) #有点问题， 如果有多个最大值容易造成误差
         return mask_one * out_grad
 
-def max(a):
-    return Max()(a)
+def max(a, axis, keepdims):
+    return Max(axis, keepdims)(a)
 
 class Tanh(TensorOp):
     def compute(self, a):

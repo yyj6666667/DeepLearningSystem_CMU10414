@@ -12,7 +12,7 @@ from ..backend_selection import array_api, BACKEND
 class LogSoftmax(TensorOp):
     def compute(self, Z: NDArray) -> NDArray:
         ### BEGIN YOUR SOLUTION
-        res = Z - (ops.logsumexp(Tensor(Z), axes = (1,))).numpy().reshape((Z.shape[0], -1))
+        res = Z - (logsumexp(Tensor(Z), axes = (1,))).numpy().reshape((Z.shape[0], -1))
         return res
         ### END YOUR SOLUTION
 
@@ -21,7 +21,7 @@ class LogSoftmax(TensorOp):
         input = node.inputs[0]
         part_1 = Tensor([1]).broadcast_to(input.shape)
         softmax = exp(node) 
-        grad = out_grad - softmax * (ops.summation(out_grad, axes = (1,)).reshape((input.shape[0], 1)).broadcast_to(input.shape))
+        grad = out_grad - softmax * (summation(out_grad, axes = (1,)).reshape((input.shape[0], 1)).broadcast_to(input.shape))
         return grad
         ### END YOUR SOLUTION
 
@@ -69,7 +69,7 @@ class LogSumExp(TensorOp):
         for ax in axes:
             shape[ax] = 1
         node_new = node.reshape(shape).broadcast_to(Z.shape)
-        grad = ops.exp(Z - node_new)
+        grad = exp(Z - node_new)
         out_grad_ = out_grad.reshape(shape).broadcast_to(Z.shape)
         return out_grad_ * grad
         ### END YOUR SOLUTION
