@@ -5,7 +5,7 @@
 * 用户态代码 -> NDArray -> Device -> pybind11绑定层 -> cpp / cuda底层  
     调用链示意：
     <img src="./images/15.png" alt="alt text" width="400">
-* Stack 触发NoneType报错， 通过追踪调用栈解决;
+* Stack 触发NoneType报错， 通过追踪调用栈解决; LogSumExp 触发"Tensor has no attribute xxx"报错， 追踪发现其 compute 实现错误返回了Tensor，应该是NDArray
 ---
 
 以下是在实践过程中部分有功能代表性的代码,均为独立**手写**：
