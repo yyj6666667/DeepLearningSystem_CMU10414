@@ -1,4 +1,7 @@
 
+1.16
+* add TensorOp stack and split, 互为微分逆运算
+
 以下是在实践过程中部分有功能代表性的代码,均为独立**手写**：
 
 numpy backend in gpu

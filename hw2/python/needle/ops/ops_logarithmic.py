@@ -21,7 +21,7 @@ class LogSoftmax(TensorOp):
         input = node.inputs[0]
         part_1 = Tensor([1]).broadcast_to(input.shape)
         softmax = ops.exp(node) 
-        grad = out_grad - softmax * (ops.summation(out_grad, axes = (1,)).reshape((input.shape[0], 1)).broadcast_to(input.shape))
+        grad = out_grad - softmax * (summation(out_grad, axes = (1,)).reshape((input.shape[0], 1)).broadcast_to(input.shape))
         return grad
         ### END YOUR SOLUTION
 

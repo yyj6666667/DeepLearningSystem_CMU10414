@@ -442,12 +442,23 @@ class Split(TensorTupleOp):
 
     def compute(self, A):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        res_shape = []
+        for i, dim in enumerate(A.shape):
+            if i != self.axis:
+                res_shape.append(dim)
+        
+        res = []
+        for i in range(A.shape[self.axis]):
+            slices = [slice(None)] * len(A.shape)
+            slices[self.axis] = i
+            res.append(A(tuple(slices)).compact().reshape(res_shape)) 
+            #reshape要求连续内存，（因为懒，没有写非连续版本的reshape）这里compact是安全操作
+        return res
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return stack(out_grad, axis = self.axis)
         ### END YOUR SOLUTION
 
 
