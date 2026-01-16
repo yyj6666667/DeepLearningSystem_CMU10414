@@ -262,7 +262,9 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        assert self.size == reduce(operator.mul, new_shape, 1) , "total size must be same"
+        res = NDArray.as_strided(self, new_shape, NDArray.compact_strides_yyj(new_shape))
+        return res
         ### END YOUR SOLUTION
 
     def permute(self, new_axes: tuple[int, ...]) -> "NDArray":
@@ -287,7 +289,13 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        assert set(new_axes) == set(range(self.ndim)), "easy, just to make sure the passed-in axes is legal"
+        ## hh, 只需要改变shape and strides
+        new_shape = tuple(self.shape[iter] for iter in new_axes)
+        #下面这一句是错误的， 这是假定内存重排过后的结果
+        #new_strides = NDArray.compact_strides_yyj(new_shape)
+        new_strides = tuple(self._strides[iter] for iter in new_axes)
+        return NDArray.as_strided(self, new_shape, new_strides)
         ### END YOUR SOLUTION
 
     def broadcast_to(self, new_shape: tuple[int, ...]) -> "NDArray":
@@ -311,7 +319,23 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        old_shape = self.shape
+        assert all(new_shape[i] == old_shape[i] for i in range(len(old_shape)) if old_shape[i] != 1)
+        pad = len(new_shape) - len(old_shape)
+        assert pad >= 0, "cannot broadcast to fewer dimension"
+        left_aligned_shape = (1,) * pad + old_shape
+        left_aligned_strides = (0, ) * pad + self._strides
+        strides_in_list = list(left_aligned_strides) # tuple can't change , so convert to list
+        for i, (shape_old, shape_new) in enumerate(zip(left_aligned_shape, new_shape)):
+            if shape_old == shape_new:
+                continue
+            if shape_old == 1:
+                strides_in_list[i] = 0
+            else:
+                raise AssertionError(f"cannot broadcast dim {i} : {shape_old} -> {shape_new}")
+
+        return NDArray.as_strided(self, new_shape, tuple(strides_in_list))
+        ### END YOUR SOLUTION]
         ### END YOUR SOLUTION]
 
     ### Get and set elements
@@ -378,7 +402,16 @@ class NDArray:
         assert len(slices) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        #返回视图， 不复制数据
+        new_shape = tuple([(slice.stop - slice.start + slice.step - 1)
+                            // slice.step  for slice in slices])
+        new_strides = tuple([slice.step * self._strides[i] 
+                             for i, slice in enumerate(slices)])
+        # 计算初始偏移量
+        # 真是太妙了
+        new_offset = self._offset + reduce(operator.add, (slice.start * self.strides[i] for i, slice in enumerate(slices)), 0) 
+
+        return NDArray.make(new_shape, new_strides, self._device, handle= self._handle, offset= new_offset)       
         ### END YOUR SOLUTION
 
     def __setitem__(self, idxs: int | slice | tuple[int | slice, ...], other: Union["NDArray", float]) -> None:
