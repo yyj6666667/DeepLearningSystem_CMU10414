@@ -38,7 +38,7 @@ class LogSumExp(TensorOp):
     def compute(self, Z) -> "NDArray":
         ### BEGIN YOUR SOLUTION
         print("shape of input", Z.shape)
-        Z_max = array_api.max(Z, axis = self.axes, keepdims = False)
+        Z_max = array_api.max(Z, axis = self.axes, keepdims = True)
         print("shape of Z_max:", Z_max.shape)
         Z_stable = Z - Z_max.broadcast_to(Z.shape)
         print("shape of Z_stable",  Z_stable.shape)
@@ -50,7 +50,7 @@ class LogSumExp(TensorOp):
                                  )                 
                         )
         print("log_sum_exp", log_sum_exp.shape)
-        result = Z_max + log_sum_exp
+        result = Z_max.reshape(log_sum_exp.shape) + log_sum_exp
         print("result'shape :", result.shape)
         return result
         ### END YOUR SOLUTION
