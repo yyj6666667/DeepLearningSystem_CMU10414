@@ -95,12 +95,14 @@ class LoaderIterator:
         if self.shuffle:
             self.random_indices = np.arange(len(self.dataset))
             np.random.shuffle(self.random_indices)
-        self.batch_random_indices = np.array_split(self.random_indices, range(batch_size, len(dataset), batch_size), axis = 0)
+        else :
+            self.random_indices = np.arange(len(self.dataset))
+        self.batch_indices = np.array_split(self.random_indices, range(batch_size, len(dataset), batch_size), axis = 0)
         self.cur_batch = 0
         
     def __next__(self) :
-        if (self.cur_batch < len(self.batch_random_indices)) :
-            data_batch  = self.dataset[self.batch_random_indices[self.cur_batch]]
+        if (self.cur_batch < len(self.batch_indices)) :
+            data_batch  = self.dataset[self.batch_indices[self.cur_batch]]
             self.cur_batch += 1
             #data_batch: img, label
             return [Tensor(single) for single in data_batch]

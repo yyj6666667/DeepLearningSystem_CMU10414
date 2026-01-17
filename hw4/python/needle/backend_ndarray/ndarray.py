@@ -1,4 +1,5 @@
 import math
+import builtins
 import operator
 from functools import reduce
 from typing import Any, Callable, Iterable, Union
@@ -629,7 +630,7 @@ class NDArray:
         new_strides = list(self._strides) #create new object for safe modify
         for axis in axes:
             new_strides[axis] = -new_strides[axis] #反着访问
-        new_offset = self._offset + __builtins__.sum((shape - 1) * stride for i, shape, stride in enumerate(zip(self._shape, self._strides)) if i in axes )
+        new_offset = self._offset + builtins.sum((shape - 1) * stride for i, (shape, stride) in enumerate(zip(self._shape, self._strides)) if i in axes )
         
         new_array = NDArray.make(self.shape, strides=tuple(new_strides), device=self._device,
                                  handle=self._handle, offset=new_offset).compact() # 在之前的实现中， compact是读旧写新压缩零散内存，这里虽然src不是零散内存,恰好合适； make只是建立一个新的元数据视图
@@ -652,10 +653,12 @@ class NDArray:
         
         out = self._device.full(new_shape, 0, dtype=self.dtype)
         # need to fill in the middle
-        slices_fill = [slice(pad[0], pad[0] + s) for pad, s in zip(axes, self._shape)]
+        slices_fill = tuple([slice(pad[0], pad[0] + s) for pad, s in zip(axes, self._shape)])
 
         # obj[key] = value 触发 __setitem__ 魔法方法, 进一步调用NDArray Ewiseset
+        # 注意区分fancy indexing(传list) 和 一般indexing（传tuple， 记得随手转化成tuple）
         out[slices_fill] = self
+        return out
         ### END YOUR SOLUTION
 
 def array(a: Any, dtype: str = "float32", device: BackendDevice | None = None) -> NDArray:

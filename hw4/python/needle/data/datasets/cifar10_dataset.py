@@ -32,8 +32,8 @@ class CIFAR10Dataset(Dataset):
                 batch = pickle.load(f, encoding='bytes')
                 data_batches.append(batch)
 
-        self.X = np.concatenate([batch[b'data']] for batch in data_batches)
-        self.y = np.concatenate([batch[b'labels']] for batch in data_batches)
+        self.X = np.concatenate(list(batch[b'data'] for batch in data_batches))
+        self.y = np.concatenate([batch[b'labels'] for batch in data_batches])
 
         #in pytorch, we normally use CHW, while in tensorflow HWC
         #yyj: this origin data is already stored in CHW, otherwise we need to reshape to (-1, 32, 32, 3) and permute
