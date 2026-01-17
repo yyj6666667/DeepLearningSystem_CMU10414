@@ -252,12 +252,11 @@ class Summation(TensorOp):
         else:
             axes = self.axes
 
-        target_shape = list(out_grad.shape)
-        for axis in sorted(axes):
-            target_shape.insert(axis, 1)
-
-        out_grad = out_grad.reshape(target_shape)
-        return broadcast_to(out_grad, input_shape)
+        middle_shape = list(input_shape)
+        for axe in axes:
+            middle_shape[axe] = 1
+        out_grad = out_grad.reshape(middle_shape)
+        return out_grad.broadcast_to(input_shape)
         ### END YOUR SOLUTION
 
 
@@ -408,7 +407,6 @@ class Stack(TensorOp):
 
     def compute(self, args: TensorTuple) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        #
         tem_shape = list(args[0].shape)
         new_shape = tem_shape[:self.axis] + [len(args)] + tem_shape[self.axis:]
         empty_in_new_shape = array_api.empty(new_shape, dtype=args[0].dtype, device = args[0].device)
