@@ -323,6 +323,8 @@ class NDArray:
         assert len(new_shape) >= len(self.shape), "New shape must have equal or more dimensions than original shape."
 
         new_strides = [0] * len(new_shape)
+        # 这是非常优美的写法， 相当于当len(new_shape)严格更大时， 预设所有shape[axis] = 1
+
         for i in range(len(self.shape)):
             if self.shape[-1 - i] == 1: # Broadcasting along this dimension
                 new_strides[-1 - i] = 0

@@ -11,7 +11,7 @@ class CIFAR10Dataset(Dataset):
         train: bool,
         p: Optional[int] = 0.5,
         transforms: Optional[List] = None
-    ):
+    ):                                                                                
         """
         Parameters:
         base_folder - cifar-10-batches-py folder filepath
@@ -22,7 +22,23 @@ class CIFAR10Dataset(Dataset):
         y - numpy array of labels
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        train_names = ['data_batch_1', 'data_batch_2', 'data_batch_3', 'data_batch_4', 'data_batch_5']
+        test_names = ['test_batch']
+        names = train_names if train else test_names
+
+        data_batches = []
+        for name in names:
+            with open(os.path.join(base_folder, name), 'rb') as f:
+                batch = pickle.load(f, encoding='bytes')
+                data_batches.append(batch)
+
+        self.X = np.concatenate([batch[b'data']] for batch in data_batches)
+        self.y = np.concatenate([batch[b'labels']] for batch in data_batches)
+
+        #in pytorch, we normally use CHW, while in tensorflow HWC
+        #yyj: this origin data is already stored in CHW, otherwise we need to reshape to (-1, 32, 32, 3) and permute
+        self.X = self.X.reshape(-1, 3, 32, 32).astype(np.float32) / 255.0
+        self.y = self.y.astype(np.int32)
         ### END YOUR SOLUTION
 
     def __getitem__(self, index) -> object:
@@ -31,7 +47,7 @@ class CIFAR10Dataset(Dataset):
         Image should be of shape (3, 32, 32)
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return self.X[index], self.y[index]
         ### END YOUR SOLUTION
 
     def __len__(self) -> int:
@@ -39,5 +55,5 @@ class CIFAR10Dataset(Dataset):
         Returns the total number of examples in the dataset
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return len(self.X)
         ### END YOUR SOLUTION
