@@ -12,6 +12,7 @@
 * 容易混淆的点： 同样是调用xx.broadcast_to(), xx belongs to Tensor, NDArray调用完全不同
     * Tensor.broadcast_to(xx)调用链
     <img src="./images/16.png" width="400">
+    
     * NDArray.broadcast_to(xx)调用链
     <img src="./images/image copy 3.png" width = "400">
 ---
@@ -417,6 +418,7 @@ construct and debug log：
 ![alt text](images/14.png)
   为了计算图的延续， 必须在BACKEND添加max， 支持反向传播
 * add TensorOp Stack, Max, Tanh, 其中Stack最不好写， Stack.gradient还没有想明白
+* 调用gradient 的paradigm是外面写一个构造函数然后自己调用， 哈哈哈
 关键代码：
 ```py
  new_shape = list(args[0].shape).insert(self.axis, len(args))

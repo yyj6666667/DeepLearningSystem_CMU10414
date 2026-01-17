@@ -475,7 +475,7 @@ class Flip(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return Flip(out_grad, self.axes)
+        return flip(out_grad, self.axes)
         ### END YOUR SOLUTION
 
 
@@ -490,12 +490,20 @@ class Dilate(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_shape = list(a.shape)
+        slices = [slice(None)] * len(new_shape)
+        for axis in self.axes :
+            if axis < len(new_shape):
+                new_shape[axis] = new_shape[axis] * (self.dilation + 1)
+                slices[axis] = slice(None, None, self.dilation + 1)
+        new_array = array_api.full(tuple(new_shape), 0) #创建新内存
+        new_array[tuple(slices)] = a
+        return new_array
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return undilate(out_grad, self.axes, self.dilation)
         ### END YOUR SOLUTION
 
 
@@ -510,12 +518,16 @@ class UnDilate(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        slices = [slice(None)] * len(a.shape)
+        for axis in self.axes:
+            slices[axis] = slice(None, None, self.dilation + 1)
+        new_array = a[tuple(slices)].compact()
+        return new_array
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return dilate(out_grad, self.axes, self.dilation)
         ### END YOUR SOLUTION
 
 
