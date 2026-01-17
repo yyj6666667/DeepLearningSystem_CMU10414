@@ -1,4 +1,6 @@
-
+1.17
+* add flip, pad  通过修改NDArray元数据并重新分配内存实现flip, 其中flip的实现有些困难
+---
 1.16
 * add TensorOp stack and split, 互为微分逆运算
 * debug， TensorOp transpose needs to fit in the new NDArray backend version, 现在的transpose通过改变NDArray的视图实现（查看numpy core, 也是这么干的），也可以改变内存，需要添置NDArray调用。 内存的分配通过cpp文件的AlignedArray内置的构造函数实现

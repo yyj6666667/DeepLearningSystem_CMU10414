@@ -625,7 +625,16 @@ class NDArray:
         Note: compact() before returning.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        #warning by yyj, learned from others
+        new_strides = list(self._strides) #create new object for safe modify
+        for axis in axes:
+            new_strides[axis] = -new_strides[axis] #反着访问
+        new_offset = self._offset + __builtins__.sum((shape - 1) * stride for i, shape, stride in enumerate(zip(self._shape, self._strides)) if i in axes )
+        
+        new_array = NDArray.make(self.shape, strides=tuple(new_strides), device=self._device,
+                                 handle=self._handle, offset=new_offset).compact() # 在之前的实现中， compact是读旧写新压缩零散内存，这里虽然src不是零散内存,恰好合适； make只是建立一个新的元数据视图
+                                                                                   # 漂亮的解耦思维
+        return new_array
         ### END YOUR SOLUTION
 
     def pad(self, axes: tuple[tuple[int, int], ...]) -> "NDArray":
@@ -635,7 +644,18 @@ class NDArray:
         axes = ( (0, 0), (1, 1), (0, 0)) pads the middle axis with a 0 on the left and right side.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        assert len(axes) == self.ndim, "pad必须针对所有维度"
+
+        #借鉴了优秀作品， 非常简洁：
+        list_new_shape = [s + pad[0] + pad[1] for s, pad in zip(self._shape, axes)]
+        new_shape =  tuple(list_new_shape)
+        
+        out = self._device.full(new_shape, 0, dtype=self.dtype)
+        # need to fill in the middle
+        slices_fill = [slice(pad[0], pad[0] + s) for pad, s in zip(axes, self._shape)]
+
+        # obj[key] = value 触发 __setitem__ 魔法方法, 进一步调用NDArray Ewiseset
+        out[slices_fill] = self
         ### END YOUR SOLUTION
 
 def array(a: Any, dtype: str = "float32", device: BackendDevice | None = None) -> NDArray:
