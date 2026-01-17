@@ -320,24 +320,20 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        old_shape = self.shape
-        assert all(new_shape[i] == old_shape[i] for i in range(len(old_shape)) if old_shape[i] != 1)
-        pad = len(new_shape) - len(old_shape)
-        assert pad >= 0, "cannot broadcast to fewer dimension"
-        left_aligned_shape = (1,) * pad + old_shape
-        left_aligned_strides = (0, ) * pad + self._strides
-        strides_in_list = list(left_aligned_strides) # tuple can't change , so convert to list
-        for i, (shape_old, shape_new) in enumerate(zip(left_aligned_shape, new_shape)):
-            if shape_old == shape_new:
-                continue
-            if shape_old == 1:
-                strides_in_list[i] = 0
-            else:
-                raise AssertionError(f"cannot broadcast dim {i} : {shape_old} -> {shape_new}")
+        assert len(new_shape) >= len(self.shape), "New shape must have equal or more dimensions than original shape."
 
-        return NDArray.as_strided(self, new_shape, tuple(strides_in_list))
+        new_strides = [0] * len(new_shape)
+        for i in range(len(self.shape)):
+            if self.shape[-1 - i] == 1: # Broadcasting along this dimension
+                new_strides[-1 - i] = 0
+            elif self.shape[-1 - i] == new_shape[-1 - i]:
+                new_strides[-1 - i] = self.strides[-1 - i]
+            else:
+                raise ValueError("Shapes are not broadcast-compatible.")
+        
+        return self.as_strided(new_shape, tuple(new_strides))
         ### END YOUR SOLUTION]
-        ### END YOUR SOLUTION]
+
 
     ### Get and set elements
 
