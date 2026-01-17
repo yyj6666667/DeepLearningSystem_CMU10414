@@ -38,7 +38,7 @@ class LogSumExp(TensorOp):
     def compute(self, Z) -> "NDArray":
         ### BEGIN YOUR SOLUTION
         print("shape of input", Z.shape)
-        Z_max = array_api.max(Z, axis = self.axes, keepdims = True)
+        Z_max = array_api.max(Z, axis = self.axes, keepdims = False)
         print("shape of Z_max:", Z_max.shape)
         Z_stable = Z - Z_max.broadcast_to(Z.shape)
         print("shape of Z_stable",  Z_stable.shape)
@@ -46,24 +46,13 @@ class LogSumExp(TensorOp):
                               array_api.sum( 
                                  array_api.exp(Z_stable), 
                                           axis=self.axes, 
-                                          keepdims = True
+                                          keepdims = False
                                  )                 
                         )
         print("log_sum_exp", log_sum_exp.shape)
         result = Z_max + log_sum_exp
         print("result'shape :", result.shape)
         return result
-        
-            #这里屏蔽一个原先的二维版本
-            #drop max out to prevent exp explode
-            # 命名时前面的Z代表这是有多组x_i 组成的矩阵
-             #n_dim = Z.shape[0]
-             #Z = Tensor(Z)      
-             #Z_max_each_row = max(Z, axis = 1).reshape((n_dim, 1))
-             #Z_row_minus_max_each_row = Z - Z_max_each_row.broadcast_to(Z.shape)
-             #Z_logsumexp_each_row = log( summation(exp(Z_row_minus_max_each_row), axes=(1,)).reshape((n_dim, 1)) ) # shape: (n_dim, 1)
-             #result = Z_max_each_row + Z_logsumexp_each_row
-             #return result.detach()
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad: Tensor, node: Tensor):
