@@ -548,18 +548,20 @@ class Conv(TensorOp):
         # C_in  是图像的通道数， 容易理解
         assert len(A.shape) == 4 and len(B.shape) == 4, "both A and B's input dimension must be 4"
         p = self.padding
+        s = self.stride
         A = A.pad(( (0, 0), (p, p), (p, p), (0, 0) )).compact()
 
         N, H, W, C_in = A.shape
         K ,C_out= B.shape[0], B.shape[3]
-        H_new = H - K + 1
-        W_new = W - K + 1
-        matmul_dim = K * K * C_in
+        H_new = (H - K + 1 + (s - 1)) // s
+        W_new = (W - K + 1 + (s - 1)) // s
 
+        # A:(N, H, W, C_in), B: (K, K, C_in, C_out), B is kernel
+        # out:(N, H_out, W_out, C_out) = Conv(A, B, stride, padding)
         #改变视图后， 强转成连续内存
-        s = A.strides
+        S = A.strides
         mid_shape = (N, H_new, W_new, K, K, C_in)
-        mid_strides = (s[0], s[1], s[2], s[1], s[2], s[3]) #!!!core!!!
+        mid_strides = (S[0], S[1] * self.stride, S[2] * self.stride, S[1], S[2], S[3]) #!!!core!!!
         A_mid = A.as_strided(mid_shape, mid_strides).compact()
 
         #连续内存上reshape成2D
@@ -570,16 +572,19 @@ class Conv(TensorOp):
         return out
         ### END YOUR SOLUTION
 
-        ###yyj: naive version
-        #A_col = array_api.empty((N * H_new * W_new, matmul_dim), device = A._device)
-        #for n in range(N):
-        #    for h in range(H_new):
-        #        for w in range(W_new):
-        #            A_col[(n * H_new * W_new) + h * W_new + w, :] = A[n, h : h + K, w : w + K,:].reshape((1, matmul_dim))
+             ###yyj: naive version
+             #A_col = array_api.empty((N * H_new * W_new, matmul_dim), device = A._device)
+             #for n in range(N):
+             #    for h in range(H_new):
+             #        for w in range(W_new):
+             #            A_col[(n * H_new * W_new) + h * W_new + w, :] = A[n, h : h + K, w : w + K,:].reshape((1, matmul_dim))
                                                                                                 #这里会调用我写的__setItem__加速
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
+        if self.stride != 1:
+            out_grad = dilate(out_grad, axes=(1, 2), dilation=self.stride - 1)
+
         A, B = node.inputs
         K    = B.shape[0]
         # compute dA

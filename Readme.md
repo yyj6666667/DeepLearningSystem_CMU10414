@@ -9,6 +9,21 @@
 
 * 参考优秀作品，大多使用NDArray的视图改变(Strided-View方法)，最后同样利用上了GEMM，而且kernel直接进入缓存，是非常优雅的解决办法，尤其是显存受限的场景下
 * 本仓库的实现则是传统的`im2col`,对显存要求更高。
+    ```py
+    def conv(A, B):
+        # A:(N, H, W, C_in), B: (K, K, C_in, C_out)  B is kernel
+        # out:(N, H_out, W_out, C_out) 
+        #改变视图后， 强转成连续内存
+        s = A.strides
+        mid_shape = (N, H_new, W_new, K, K, C_in)
+        mid_strides = (s[0], s[1], s[2], s[1], s[2], s[3]) #!!!core!!!
+        A_mid = A.as_strided(mid_shape, mid_strides).compact()
+        #连续内存上reshape成2D
+        A_col = A_mid.reshape((N * H_new * W_new, K * K * C_in))
+        out = A_col @ B.reshape((-1, C_out))
+        out = out.reshape((N, H_new, W_new, C_out))
+        return out
+    ```
 ---
 1.17
 * add flip, pad  通过修改NDArray元数据并重新分配内存实现flip, 其中flip的实现有些困难
