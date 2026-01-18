@@ -147,12 +147,12 @@ class DivScalar(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return out_grad / self.scalar 
+        return divide_scalar(out_grad, self.scalar)
         ### END YOUR SOLUTION
 
 
 def divide_scalar(a, scalar):
-    #return DivScalar(scalar)(a) 日历仙人， 首先， 继承了__call__, 真离谱，DivScalar(scalar)返回op对象
+    #return DivScalar(scalar)(a) 首先， 继承了__call__，DivScalar(scalar)返回op对象
     op = DivScalar(scalar)
     #由于继承了__call__, 这里直接调用op对象就行了
     return op(a)
@@ -371,7 +371,7 @@ class Max(TensorOp):
     
     def gradient(self, out_grad, node):
         forward_res = node.realize_cached_data()
-        mask_one    = node.input[0] == forward_res.reshape(-1, 1) #有点问题， 如果有多个最大值容易造成误差
+        mask_one    = node.inputs[0] == forward_res.reshape(-1, 1) #有点问题， 如果有多个最大值容易造成误差
         return mask_one * out_grad
 
 def max(a, axis, keepdims):
@@ -545,7 +545,7 @@ class Permute(TensorOp):
     
     def gradient(self, out_grad, node):
         assert len(self.axes) == len(out_grad.shape)
-        new_order = []
+        new_order = [-1] * len(self.axes)
         for i, axis in self.axes:
             new_order[axis] = i
         new_order = tuple(new_order)
@@ -573,8 +573,8 @@ class Conv(TensorOp):
 
         N, H, W, C_in = A.shape
         K_H, K_W, C_out= B.shape[0], B.shape[1], B.shape[3]
-        H_new = (H - K_H + 1 + (s - 1)) // s
-        W_new = (W - K_W + 1 + (s - 1)) // s
+        H_new = (H - K_H + 1 ) // s
+        W_new = (W - K_W + 1 ) // s
 
         # A:(N, H, W, C_in), B: (K, K, C_in, C_out), B is kernel
         # out:(N, H_out, W_out, C_out) = Conv(A, B, stride, padding)
