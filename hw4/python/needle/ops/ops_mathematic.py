@@ -569,6 +569,7 @@ class Conv(TensorOp):
         assert len(A.shape) == 4 and len(B.shape) == 4, "both A and B's input dimension must be 4"
         p = self.padding
         s = self.stride
+        B = B.compact()
         A = A.pad(( (0, 0), (p, p), (p, p), (0, 0) )).compact()
 
         N, H, W, C_in = A.shape

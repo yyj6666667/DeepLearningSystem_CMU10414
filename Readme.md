@@ -24,6 +24,7 @@
         out = out.reshape((N, H_new, W_new, C_out))
         return out
     ```
+* 隐藏较深的bug: forward测例通过， BP测例失败，经排查，BP期间作为conv kernel的矩阵B视图改变，非连续访问内存， 而进行conv运算要求kernel内存连续。
 ---
 1.17
 * add flip, pad  通过修改NDArray元数据并重新分配内存实现flip, 其中flip的实现有些困难
