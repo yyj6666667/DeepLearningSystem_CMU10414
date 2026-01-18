@@ -496,7 +496,8 @@ class Dilate(TensorOp):
             if axis < len(new_shape):
                 new_shape[axis] = new_shape[axis] * (self.dilation + 1)
                 slices[axis] = slice(None, None, self.dilation + 1)
-        new_array = array_api.full(tuple(new_shape), 0, device = a.device) #创建新内存
+        new_array = array_api.full(tuple(new_shape), 0, device = a._device) #创建新内存
+        assert new_array.device == a.device, "a and new_array must share same device"
         new_array[tuple(slices)] = a
         return new_array
         ### END YOUR SOLUTION
@@ -555,14 +556,14 @@ class Conv(TensorOp):
         W_new = W - K + 1
         matmul_dim = K * K * C_in
 
-        A_col = array_api.empty((N * H_new * W_new, matmul_dim), dtype = A.dtype, device = A.device)
+        A_col = array_api.empty((N * H_new * W_new, matmul_dim), dtype = A.dtype, device = A._device)
         for n in range(N):
             for h in range(H_new):
                 for w in range(W_new):
                     A_col[(n * H_new * W_new) + h * W_new + w, :] = A[n, h : h + K, w : w + K,:].reshape((1, matmul_dim))
                                                                                                 #这里会调用我写的__setItem__加速
         
-        out = A_col @ B.reshape(-1, C_out)
+        out = A_col @ B.reshape((-1, C_out))
         out = out.reshape(N, H_new, W_new, C_out)
         return out
         ### END YOUR SOLUTION
