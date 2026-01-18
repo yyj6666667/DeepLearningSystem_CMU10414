@@ -230,11 +230,13 @@ class NDArray:
             return self
         else:
             out = NDArray.make(self.shape, device=self.device)
+            #这里调用device层， 又比NDArray层更加底层!
+            #此处的compact是真正的byte级别，注意区分它和NDArray层compact的区别
             self.device.compact(
                 self._handle, out._handle, self.shape, self.strides, self._offset
             )
             return out
-
+    #返回一个具有内存（优先是原有， 其次是新分配）特定视图的NDArray对象
     def as_strided(self, shape: tuple[int, ...], strides: tuple[int, ...]) -> "NDArray":
         """Restride the matrix without copying memory."""
         assert len(shape) == len(strides)

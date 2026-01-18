@@ -556,17 +556,27 @@ class Conv(TensorOp):
         W_new = W - K + 1
         matmul_dim = K * K * C_in
 
-        A_col = array_api.empty((N * H_new * W_new, matmul_dim), device = A._device)
-        for n in range(N):
-            for h in range(H_new):
-                for w in range(W_new):
-                    A_col[(n * H_new * W_new) + h * W_new + w, :] = A[n, h : h + K, w : w + K,:].reshape((1, matmul_dim))
-                                                                                                #这里会调用我写的__setItem__加速
-        
+        #改变视图后， 强转成连续内存
+        s = A.strides
+        mid_shape = (N, H_new, W_new, K, K, C_in)
+        mid_strides = (s[0], s[1], s[2], s[1], s[2], s[3]) #!!!core!!!
+        A_mid = A.as_strided(mid_shape, mid_strides).compact()
+
+        #连续内存上reshape成2D
+        A_col = A_mid.reshape((N * H_new * W_new, K * K * C_in))
+
         out = A_col @ B.reshape((-1, C_out))
         out = out.reshape((N, H_new, W_new, C_out))
         return out
         ### END YOUR SOLUTION
+
+        ###yyj: naive version
+        #A_col = array_api.empty((N * H_new * W_new, matmul_dim), device = A._device)
+        #for n in range(N):
+        #    for h in range(H_new):
+        #        for w in range(W_new):
+        #            A_col[(n * H_new * W_new) + h * W_new + w, :] = A[n, h : h + K, w : w + K,:].reshape((1, matmul_dim))
+                                                                                                #这里会调用我写的__setItem__加速
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
