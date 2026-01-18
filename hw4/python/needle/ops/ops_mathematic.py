@@ -496,7 +496,7 @@ class Dilate(TensorOp):
             if axis < len(new_shape):
                 new_shape[axis] = new_shape[axis] * (self.dilation + 1)
                 slices[axis] = slice(None, None, self.dilation + 1)
-        new_array = array_api.full(tuple(new_shape), 0) #创建新内存
+        new_array = array_api.full(tuple(new_shape), 0, device = a.device) #创建新内存
         new_array[tuple(slices)] = a
         return new_array
         ### END YOUR SOLUTION
@@ -555,7 +555,7 @@ class Conv(TensorOp):
         W_new = W - K + 1
         matmul_dim = K * K * C_in
 
-        A_col = array_api.empty((N * H_new * W_new, matmul_dim), dtype = A.dtype)
+        A_col = array_api.empty((N * H_new * W_new, matmul_dim), dtype = A.dtype, device = A.device)
         for n in range(N):
             for h in range(H_new):
                 for w in range(W_new):

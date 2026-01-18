@@ -8,10 +8,11 @@
    <img src="./images/image copy 5.png" width = "400">
 
 * 参考优秀作品，大多使用NDArray的视图改变(Strided-View方法)，最后同样利用上了GEMM，而且kernel直接进入缓存，是非常优雅的解决办法，尤其是显存受限的场景下
-* 本仓库的实现则是传统的`im2col`,对显存要求更高
+* 本仓库的实现则是传统的`im2col`,对显存要求更高。
 ---
 1.17
 * add flip, pad  通过修改NDArray元数据并重新分配内存实现flip, 其中flip的实现有些困难
+* 哈， NDArray自带的三个辅助构造函数array(), empty(), full(), 需要显式的传入device, 带来了一些bug。添加的调用已经有attr: device，不需要显式传入
 ---
 1.16
 * add TensorOp stack and split, 互为微分逆运算
