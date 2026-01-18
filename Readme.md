@@ -1,3 +1,15 @@
+1.18
+* add TensorOp Convolution, without stride to vertify its correctness first
+* reason why we choose `im2col`and the trade-off: Im2col() arranges the data in a way that **the memory accesses are regular for Matrix Multiplication**.Im2col() function adds a lot of **data redundancy** though, but the performance benefit of using Gemm outweigh this data redundancy.空间换时间
+   * to better illustrate this, here is an image:
+   <img src="./images/image copy 4.png" width = "400">
+
+   * applying the same flattening to the kernel:
+   <img src="./images/image copy 5.png" width = "400">
+
+* 参考优秀作品，大多使用NDArray的视图改变(Strided-View方法)，最后同样利用上了GEMM，而且kernel直接进入缓存，是非常优雅的解决办法，尤其是显存受限的场景下
+* 本仓库的实现则是传统的`im2col`,对显存要求更高
+---
 1.17
 * add flip, pad  通过修改NDArray元数据并重新分配内存实现flip, 其中flip的实现有些困难
 ---

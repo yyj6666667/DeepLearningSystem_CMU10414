@@ -542,12 +542,48 @@ class Conv(TensorOp):
 
     def compute(self, A, B):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # A:(N, H, W, C_in), B: (K, K, C_in, C_out), B is kernel
+        # C_out 是滤波器(filters)数量，代表学习的特征数量
+        # C_in  是图像的通道数， 容易理解
+        assert len(A.shape) == 4 and len(B.shape) == 4, "both A and B's input dimension must be 4"
+        p = self.padding
+        A = A.pad(( (0, 0), (p, p), (p, p), (0, 0) )).compact()
+
+        N, H, W, C_in = A.shape
+        K ,C_out= B.shape[0], B.shape[3]
+        H_new = H - K + 1
+        W_new = W - K + 1
+        matmul_dim = K * K * C_in
+
+        A_col = array_api.empty((N * H_new * W_new, matmul_dim), dtype = A.dtype)
+        for n in range(N):
+            for h in range(H_new):
+                for w in range(W_new):
+                    A_col[(n * H_new * W_new) + h * W_new + w, :] = A[n, h : h + K, w : w + K,:].reshape((1, matmul_dim))
+                                                                                                #这里会调用我写的__setItem__加速
+        
+        out = A_col @ B.reshape(-1, C_out)
+        out = out.reshape(N, H_new, W_new, C_out)
+        return out
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        A, B = node.inputs
+        K    = B.shape[0]
+        # compute dA
+        B_flip = flip(B, (0, 1))
+        B_flip = transpose(B_flip, (0, 1, 3, 2))
+
+        dA = conv(out_grad, B_flip, stride=1, padding=K - 1 - self.padding) #为了匹配H_A, W_A 维度， 需要padding
+        
+        # comput dB
+        A_T = transpose(A, (3, 1, 2, 0))
+        out_grad_T = transpose(out_grad, (1, 2, 0, 3))
+        dB_T = conv(A_T, out_grad_T, stride=1, padding=self.padding)
+        dB   = transpose(dB_T, (1, 2, 0, 3))
+
+        return dA, dB
         ### END YOUR SOLUTION
 
 
