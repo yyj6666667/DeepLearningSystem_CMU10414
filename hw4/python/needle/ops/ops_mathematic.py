@@ -552,20 +552,20 @@ class Conv(TensorOp):
         A = A.pad(( (0, 0), (p, p), (p, p), (0, 0) )).compact()
 
         N, H, W, C_in = A.shape
-        K ,C_out= B.shape[0], B.shape[3]
-        H_new = (H - K + 1 + (s - 1)) // s
-        W_new = (W - K + 1 + (s - 1)) // s
+        K_H, K_W, C_out= B.shape[0], B.shape[1], B.shape[3]
+        H_new = (H - K_H + 1 + (s - 1)) // s
+        W_new = (W - K_W + 1 + (s - 1)) // s
 
         # A:(N, H, W, C_in), B: (K, K, C_in, C_out), B is kernel
         # out:(N, H_out, W_out, C_out) = Conv(A, B, stride, padding)
         #改变视图后， 强转成连续内存
         S = A.strides
-        mid_shape = (N, H_new, W_new, K, K, C_in)
+        mid_shape = (N, H_new, W_new, K_H, K_W, C_in)
         mid_strides = (S[0], S[1] * self.stride, S[2] * self.stride, S[1], S[2], S[3]) #!!!core!!!
         A_mid = A.as_strided(mid_shape, mid_strides).compact()
 
         #连续内存上reshape成2D
-        A_col = A_mid.reshape((N * H_new * W_new, K * K * C_in))
+        A_col = A_mid.reshape((N * H_new * W_new, K_H * K_W * C_in))
 
         out = A_col @ B.reshape((-1, C_out))
         out = out.reshape((N, H_new, W_new, C_out))
@@ -589,15 +589,15 @@ class Conv(TensorOp):
         K    = B.shape[0]
         # compute dA
         B_flip = flip(B, (0, 1))
-        B_flip = transpose(B_flip, (0, 1, 3, 2))
+        B_flip = NDArray.permute(B_flip, (0, 1, 3, 2))
 
         dA = conv(out_grad, B_flip, stride=1, padding=K - 1 - self.padding) #为了匹配H_A, W_A 维度， 需要padding
         
         # comput dB
-        A_T = transpose(A, (3, 1, 2, 0))
-        out_grad_T = transpose(out_grad, (1, 2, 0, 3))
+        A_T = NDArray.permute(A, (3, 1, 2, 0))
+        out_grad_T = NDArray.permute(out_grad, (1, 2, 0, 3))
         dB_T = conv(A_T, out_grad_T, stride=1, padding=self.padding)
-        dB   = transpose(dB_T, (1, 2, 0, 3))
+        dB   = NDArray.permute(dB_T, (1, 2, 0, 3))
 
         return dA, dB
         ### END YOUR SOLUTION
