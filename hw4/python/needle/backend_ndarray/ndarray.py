@@ -728,7 +728,7 @@ def flip(a: NDArray, axes: tuple[int, ...]) -> NDArray:
     return a.flip(axes)
 
 #yyj add:
-def transpose(a: NDArray, axes: tuple[int, ...]) -> NDArray:
+def permute(a: NDArray, axes: tuple[int, ...]) -> NDArray:
     return a.permute(axes)
 
 def max(a: NDArray, axis = None, keepdims = None) -> NDArray:

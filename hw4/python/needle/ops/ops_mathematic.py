@@ -536,6 +536,26 @@ def undilate(a, axes, dilation):
     return UnDilate(axes, dilation)(a)
 
 
+class Permute(TensorOp):
+    def __init__(self, axes :tuple):
+        self.axes = axes
+
+    def compute(self, A)-> NDArray:
+        return array_api.permute(A, self.axes)
+    
+    def gradient(self, out_grad, node):
+        assert len(self.axes) == len(out_grad.shape)
+        new_order = []
+        for i, axis in self.axes:
+            new_order[axis] = i
+        new_order = tuple(new_order)
+        return permute(out_grad, new_order)
+
+
+def permute(a, axes):
+    return Permute(axes)(a)
+    
+
 class Conv(TensorOp):
     def __init__(self, stride: Optional[int] = 1, padding: Optional[int] = 0):
         self.stride = stride
@@ -589,15 +609,15 @@ class Conv(TensorOp):
         K    = B.shape[0]
         # compute dA
         B_flip = flip(B, (0, 1))
-        B_flip = NDArray.permute(B_flip, (0, 1, 3, 2))
+        B_flip = permute(B_flip, (0, 1, 3, 2))
 
         dA = conv(out_grad, B_flip, stride=1, padding=K - 1 - self.padding) #为了匹配H_A, W_A 维度， 需要padding
         
         # comput dB
-        A_T = NDArray.permute(A, (3, 1, 2, 0))
-        out_grad_T = NDArray.permute(out_grad, (1, 2, 0, 3))
+        A_T = permute(A, (3, 1, 2, 0))
+        out_grad_T = permute(out_grad, (1, 2, 0, 3))
         dB_T = conv(A_T, out_grad_T, stride=1, padding=self.padding)
-        dB   = NDArray.permute(dB_T, (1, 2, 0, 3))
+        dB   = permute(dB_T, (1, 2, 0, 3))
 
         return dA, dB
         ### END YOUR SOLUTION
