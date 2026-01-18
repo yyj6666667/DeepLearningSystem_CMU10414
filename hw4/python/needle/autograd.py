@@ -358,6 +358,15 @@ class Tensor(Value):
 
     def transpose(self, axes=None):
         return needle.ops.Transpose(axes)(self)
+    
+    #yyj: add
+    def permute(self, axes=None):
+    #debug:     def permute(self, axes=tuple(list[range(len(self.shape))])):,
+    #           错误写法， 默认参数是在函数定义时就计算保存， 跟具体实例无关
+        if axes is None:
+            axes = tuple(list[range(len(self.shape))]) 
+            
+        return needle.ops.Permute(axes)(self)
 
 
 
