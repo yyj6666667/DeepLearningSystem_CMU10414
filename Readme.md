@@ -12,7 +12,7 @@
 ---
 1.17
 * add flip, pad  通过修改NDArray元数据并重新分配内存实现flip, 其中flip的实现有些困难
-* 哈， NDArray自带的三个辅助构造函数array(), empty(), full(), 需要显式的传入device, 带来了一些bug。添加的调用已经有attr: device，不需要显式传入
+* NDArray自带的三个辅助构造函数array(), empty(), full(), 需要显式的传入device, 带来了一些bug。添加的调用已经有attr: device，不需要显式传入
 ---
 1.16
 * add TensorOp stack and split, 互为微分逆运算

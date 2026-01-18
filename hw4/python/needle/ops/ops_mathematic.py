@@ -556,7 +556,7 @@ class Conv(TensorOp):
         W_new = W - K + 1
         matmul_dim = K * K * C_in
 
-        A_col = array_api.empty((N * H_new * W_new, matmul_dim), dtype = A.dtype, device = A._device)
+        A_col = array_api.empty((N * H_new * W_new, matmul_dim), dtype = A._dtype, device = A._device)
         for n in range(N):
             for h in range(H_new):
                 for w in range(W_new):

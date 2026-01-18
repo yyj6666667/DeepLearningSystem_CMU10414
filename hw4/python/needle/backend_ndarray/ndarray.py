@@ -264,6 +264,22 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
+        neg_count = builtins.sum(1 for item in new_shape if item == -1)
+        assert neg_count <= 1, "yyj: only one -1 is permitted in unknown shape"
+
+        
+        prod = 1
+        if neg_count == 1:
+            new_shape = list(new_shape)
+            for i, item in enumerate(new_shape):
+                if item == -1:
+                    loc = i
+                else:
+                    prod *= item
+            infered = self.size // prod
+            new_shape[loc] = infered
+            new_shape = tuple(new_shape)
+
         assert self.size == reduce(operator.mul, new_shape, 1) , "total size must be same"
         res = NDArray.as_strided(self, new_shape, NDArray.compact_strides(new_shape))
         return res
