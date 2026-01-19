@@ -12,14 +12,19 @@ from ..backend_selection import array_api, BACKEND
 class LogSoftmax(TensorOp):
     def compute(self, Z: NDArray) -> NDArray:
         ### BEGIN YOUR SOLUTION
-        res = Z - (logsumexp(Z, axes = (1,))).reshape((Z.shape[0], -1))
-        return res
+        #debug:
+        assert isinstance(Z, NDArray), "yyj: Z must be NDArray"
+        last_axis = len(Z.shape) - 1
+        Z -= Z.max((last_axis,), keepdims = True).broadcast_to(Z.shape)
+        Z_exp = Z.exp()
+        Z_sum = Z_exp.sum(last_axis, keepdims = True).broadcast_to(Z.shape)
+        ret   = array_api.log(Z_exp / Z_sum)
+        return ret
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad: Tensor, node: Tensor):
         ### BEGIN YOUR SOLUTION
         input = node.inputs[0]
-        part_1 = Tensor([1]).broadcast_to(input.shape)
         softmax = exp(node) 
         grad = out_grad - softmax * (summation(out_grad, axes = (1,)).reshape((input.shape[0], 1)).broadcast_to(input.shape))
         return grad
@@ -37,6 +42,7 @@ class LogSumExp(TensorOp):
 
     def compute(self, Z) -> "NDArray":
         ### BEGIN YOUR SOLUTION
+        assert isinstance(Z, NDArray), "yyj: Z must be NDArray"
         print("shape of input", Z.shape)
         Z_max = array_api.max(Z, axis = self.axes, keepdims = True)
         print("shape of Z_max:", Z_max.shape)

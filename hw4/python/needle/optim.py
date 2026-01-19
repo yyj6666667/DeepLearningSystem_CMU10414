@@ -79,7 +79,7 @@ class Adam(Optimizer):
             if param not in self.v:
                 self.v[param] = 0
             self.m[param] = self.beta1 * self.m[param] + (1 - self.beta1) * grad
-            self.v[param] = self.bata2 * self.v[param] + (1 - self.beta2) * (grad ** 2)
+            self.v[param] = self.beta2 * self.v[param] + (1 - self.beta2) * (grad ** 2)
             m_hat = self.m[param] / (1 - self.beta1 ** self.t)
             v_hat = self.v[param] / (1 - self.beta2 ** self.t)
             tem_grad = m_hat / (v_hat ** 0.5 + self.eps)
