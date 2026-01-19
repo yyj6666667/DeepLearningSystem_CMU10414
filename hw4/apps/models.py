@@ -1,4 +1,8 @@
 import sys
+from pathlib import Path
+# 添加 python 目录到系统路径
+path = str(Path(__file__).parent.parent/"python")
+sys.path.insert(0, str(Path(__file__).parent / "python"))
 sys.path.append('./python')
 import needle as ndl
 import needle.nn as nn
@@ -6,17 +10,53 @@ import math
 import numpy as np
 np.random.seed(0)
 
+            
 
 class ResNet9(ndl.nn.Module):
     def __init__(self, device=None, dtype="float32"):
         super().__init__()
         ### BEGIN YOUR SOLUTION ###
-        raise NotImplementedError() ###
+        self.device = device
+        self.dtype = dtype
+        self.sequence_resnet9 = nn.Sequential(
+            self.ConvBN(3, 16, 7, 4),
+            self.ConvBN(16, 32, 3, 2),
+            nn.Residual(
+                nn.Sequential(
+                    self.ConvBN(32, 32, 3, 1),
+                    self.ConvBN(32, 32, 3, 1)
+                )
+            ),
+            self.ConvBN(32, 64, 3, 2),
+            self.ConvBN(64, 128, 3, 2),
+            nn.Residual(
+                nn.Sequential(
+                    self.ConvBN(128, 128, 3, 1),
+                    self.ConvBN(128, 128, 3, 1)
+                )
+            ),
+            nn.Flatten(),
+            nn.Linear(128, 128, bias = True, device = self.device,
+                      dtype = self.dtype),
+            nn.ReLU(),
+            nn.Linear(128, 10, bias = True, device = self.device,
+                      dtype = self.dtype)
+        )
         ### END YOUR SOLUTION
+
+    def ConvBN(self, a, b, k, s):
+        sequence = nn.Sequential(
+        nn.Conv(in_channels = a, out_channels = b, 
+                kernel_size = k , stride = s, device = self.device,
+                dtype = self.dtype),
+        nn.BatchNorm2d(b, device=self.device, dtype = self.dtype),
+        nn.ReLU()
+        )
+        return sequence
 
     def forward(self, x):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return self.sequence_resnet9(x)
         ### END YOUR SOLUTION
 
 
