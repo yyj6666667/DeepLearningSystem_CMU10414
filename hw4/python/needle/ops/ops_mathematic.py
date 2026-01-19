@@ -546,7 +546,7 @@ class Permute(TensorOp):
     def gradient(self, out_grad, node):
         assert len(self.axes) == len(out_grad.shape)
         new_order = [-1] * len(self.axes)
-        for i, axis in self.axes:
+        for i, axis in enumerate(self.axes):
             new_order[axis] = i
         new_order = tuple(new_order)
         return permute(out_grad, new_order)
