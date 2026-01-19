@@ -386,6 +386,8 @@ class Max(TensorOp):
 def max(a, axis, keepdims):
     return Max(axis, keepdims)(a)
 
+
+
 class Tanh(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
