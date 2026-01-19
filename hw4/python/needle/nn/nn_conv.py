@@ -36,7 +36,7 @@ class Conv(Module):
         self.weight = Parameter(init.kaiming_uniform(self.fan_in, self.fan_out, self.w_shape, nonlinearity="relu", device = device, dtype = dtype, requires_grad = True))
         if bias:
             bound = 1.0 / (self.in_channels * (self.kernel_size)**2) ** 0.5
-            self.bias = Parameter(init.rand((out_channels,), low=-bound, high=bound, requires_grad=True, device=device, dtype=dtype))
+            self.bias = Parameter(init.rand(out_channels, low=-bound, high=bound, requires_grad=True, device=device, dtype=dtype))
         else:
             self.bias = None # if not added in forward there will be "no attribute" error
         ### END YOUR SOLUTION
