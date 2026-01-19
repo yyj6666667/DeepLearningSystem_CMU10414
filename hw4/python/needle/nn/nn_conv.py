@@ -50,5 +50,5 @@ class Conv(Module):
             bias = ops.reshape(self.bias, (1, 1, 1, -1))
             res_1 = res_1 + bias.broadcast_to(res_1.shape)
         
-        return res_1.permute(0, 3, 1, 2)
+        return res_1.permute((0, 3, 1, 2))
         ### END YOUR SOLUTION
