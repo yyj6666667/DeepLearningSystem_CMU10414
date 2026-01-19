@@ -238,7 +238,16 @@ class Summation(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        return array_api.sum(a, axis = self.axes)
+        if self.axes is None:
+            ret = array_api.sum(a, axis = self.axes)
+        else:
+            axes_descending = reversed(sorted(self.axes))
+            #axes 必须从大到小排列， 否则summation过后会错位
+            ret = a
+            for i, axis in enumerate(axes_descending):
+                ret = array_api.sum(ret, axis)
+
+        return ret
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
