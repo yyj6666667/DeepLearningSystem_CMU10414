@@ -3,7 +3,7 @@
 from typing import List, Callable, Any
 from needle.autograd import Tensor
 from needle import ops
-import needle.init as init
+from .. import init
 import numpy as np
 from .nn_basic import Parameter, Module
 

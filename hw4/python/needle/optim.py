@@ -1,5 +1,5 @@
 """Optimization module"""
-import needle as ndl
+from needle import Tensor
 import numpy as np
 
 
@@ -83,5 +83,5 @@ class Adam(Optimizer):
             m_hat = self.m[param] / (1 - self.beta1 ** self.t)
             v_hat = self.v[param] / (1 - self.beta2 ** self.t)
             tem_grad = m_hat / (v_hat ** 0.5 + self.eps)
-            param.data -= self.lr * ndl.Tensor(tem_grad, dtype = param.data.dtype)
+            param.data -= self.lr * Tensor(tem_grad, dtype = param.data.dtype)
         ### END YOUR SOLUTION

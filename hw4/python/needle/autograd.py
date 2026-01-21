@@ -1,5 +1,5 @@
 """Core data structures."""
-import needle
+from . import ops 
 from .backend_numpy import Device, all_devices
 from typing import List, Optional, NamedTuple, Tuple, Union, Dict
 from collections import namedtuple
@@ -170,7 +170,7 @@ class TensorTuple(Value):
         return len(cdata)
 
     def __getitem__(self, index: int):
-        return needle.ops.tuple_get_item(self, index)
+        return ops.tuple_get_item(self, index)
 
     def tuple(self):
         return tuple([x for x in self])
@@ -184,7 +184,7 @@ class TensorTuple(Value):
     def __add__(self, other):
         assert isinstance(other, TensorTuple)
         assert len(self) == len(other)
-        return needle.ops.make_tuple(*[self[i] + other[i] for i in range(len(self))])
+        return ops.make_tuple(*[self[i] + other[i] for i in range(len(self))])
 
     def detach(self):
         """Create a new tensor that shares the data but detaches from the graph."""
@@ -310,63 +310,63 @@ class Tensor(Value):
 
     def __add__(self, other):
         if isinstance(other, Tensor):
-            return needle.ops.EWiseAdd()(self, other)
+            return ops.EWiseAdd()(self, other)
         else:
-            return needle.ops.AddScalar(other)(self)
+            return ops.AddScalar(other)(self)
 
     def __mul__(self, other):
         if isinstance(other, Tensor):
-            return needle.ops.EWiseMul()(self, other)
+            return ops.EWiseMul()(self, other)
         else:
-            return needle.ops.MulScalar(other)(self)
+            return ops.MulScalar(other)(self)
 
     def __pow__(self, other):
         if isinstance(other, Tensor):
-            return needle.ops.EWisePow()(self, other)
+            return ops.EWisePow()(self, other)
         else:
-            return needle.ops.PowerScalar(other)(self)
+            return ops.PowerScalar(other)(self)
 
     def __sub__(self, other):
         if isinstance(other, Tensor):
-            return needle.ops.EWiseAdd()(self, needle.ops.Negate()(other))
+            return ops.EWiseAdd()(self, ops.Negate()(other))
         else:
-            return needle.ops.AddScalar(-other)(self)
+            return ops.AddScalar(-other)(self)
 
     def __truediv__(self, other):
         if isinstance(other, Tensor):
-            return needle.ops.EWiseDiv()(self, other)
+            return ops.EWiseDiv()(self, other)
         else:
-            return needle.ops.DivScalar(other)(self)
+            return ops.DivScalar(other)(self)
 
     def __matmul__(self, other):
-        return needle.ops.MatMul()(self, other)
+        return ops.MatMul()(self, other)
 
     def matmul(self, other):
-        return needle.ops.MatMul()(self, other)
+        return ops.MatMul()(self, other)
 
     def sum(self, axes=None):
-        return needle.ops.Summation(axes)(self)
+        return ops.Summation(axes)(self)
 
     def broadcast_to(self, shape):
-        return needle.ops.BroadcastTo(shape)(self)
+        return ops.BroadcastTo(shape)(self)
 
     def reshape(self, shape):
-        return needle.ops.Reshape(shape)(self)
+        return ops.Reshape(shape)(self)
 
     def __neg__(self):
-        return needle.ops.Negate()(self)
+        return ops.Negate()(self)
 
     def transpose(self, axes=None):
-        return needle.ops.Transpose(axes)(self)
+        return ops.Transpose(axes)(self)
     
     #yyj: add
     def permute(self, axes=None):
     #debug:     def permute(self, axes=tuple(list[range(len(self.shape))])):,
     #           错误写法， 默认参数是在函数定义时就计算保存， 跟具体实例无关
         if axes is None:
-            axes = tuple(list[range(len(self.shape))]) 
+            axes = tuple(list(range(len(self.shape)))) 
             
-        return needle.ops.Permute(axes)(self)
+        return ops.Permute(axes)(self)
 
 
 

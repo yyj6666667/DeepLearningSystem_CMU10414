@@ -1,10 +1,10 @@
 import numpy as np
-import python.needle as ndl
+from needle import cpu,data,nn, optim
 
 np.random.seed(0)
-device = ndl.cpu()
-dataset = ndl.data.CIFAR10Dataset("./data/cifar-10-batches-py", train=True)
-dataloader = ndl.data.DataLoader(
+device = cpu()
+dataset = data.CIFAR10Dataset("./data/cifar-10-batches-py", train=True)
+dataloader = data.DataLoader(
     dataset=dataset,
     batch_size=128,
     shuffle=False
@@ -15,9 +15,9 @@ np.random.seed(0)
 
 def one_iter_of_cifar10_training(dataloader, model, niter=1, loss_fn=None, opt=None):
     if loss_fn is None:
-        loss_fn = ndl.nn.SoftmaxLoss()
+        loss_fn = nn.SoftmaxLoss()
     if opt is None:
-        opt = ndl.optim.Adam(model.parameters())
+        opt = optim.Adam(model.parameters())
     
     np.random. seed(4)
     model.train()
@@ -26,7 +26,7 @@ def one_iter_of_cifar10_training(dataloader, model, niter=1, loss_fn=None, opt=N
     for batch in dataloader:
         opt.reset_grad()
         X, y = batch
-        #X, y = ndl.Tensor(X, device=device), ndl.Tensor(y, device=device)
+        #X, y = Tensor(X, device=device), Tensor(y, device=device)
         out = model(X)
         correct += np.sum(np.argmax(out.numpy(), axis=1) == y.numpy())
         loss = loss_fn(out, y)
@@ -42,6 +42,6 @@ model = ResNet9(device=device, dtype="float32")
 out = one_iter_of_cifar10_training(
     dataloader, 
     model, 
-    opt=ndl.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
+    opt=optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
 )
 print(f"one epoch: correct is {out[0]}, total_loss is {out[1]}")
