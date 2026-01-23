@@ -1,3 +1,6 @@
+1.21
+* training ResNet9 on cifar10, 梯度爆炸
+    * <img src="./images/image copy 6.png" width = "400">
 1.18
 * add TensorOp Convolution, without stride to vertify its correctness first
 * reason why we choose `im2col`and the trade-off: Im2col() arranges the data in a way that **the memory accesses are regular for Matrix Multiplication**.Im2col() function adds a lot of **data redundancy** though, but the performance benefit of using Gemm outweigh this data redundancy.空间换时间

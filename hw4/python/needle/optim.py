@@ -70,7 +70,13 @@ class Adam(Optimizer):
     def step(self):
         ### BEGIN YOUR SOLUTION
         self.t += 1
-        for param in self.params:
+        #debug yyj 1.23
+        for i,param in enumerate(self.params):
+            #debug
+            grad_np = param.grad.data.numpy()
+            if np.isnan(grad_np).any():
+                print(f"\n[DEBUG], NaN is detected in gradient at Index{i}")
+                raise ValueError(f"yyj: NaN gradient at param index{i}")
             # l2
             grad = param.grad.data + self.weight_decay * param.data
 

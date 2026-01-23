@@ -612,7 +612,7 @@ class Conv(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        if self.stride != 1:
+        if self.stride > 1:
             out_grad = dilate(out_grad, axes=(1, 2), dilation=self.stride - 1)
 
         A, B = node.inputs
@@ -626,7 +626,9 @@ class Conv(TensorOp):
         # comput dB
         A_T = permute(A, (3, 1, 2, 0))
         out_grad_T = permute(out_grad, (1, 2, 0, 3))
-        dB_T = conv(A_T, out_grad_T, stride=1, padding=self.padding)
+        dB_T = conv(A_T, out_grad_T, padding=self.padding)
+        if self.stride > 1:
+            dB_T = get_item(dB_T, (slice(None), slice(0, K), slice(0, K), slice(None)))
         dB   = permute(dB_T, (1, 2, 0, 3))
 
         return dA, dB
@@ -636,5 +638,37 @@ class Conv(TensorOp):
 def conv(a, b, stride=1, padding=1):
     return Conv(stride, padding)(a, b)
 
+class GetItem(TensorOp):
+    def __init__(self, idxs):
+        self.idxs = idxs
 
+    def compute(self, a):
+        return a[self.idxs]
+    
+    def gradient(self, out_grad, node):
+        in_shape = node.inputs[0].shape
+        grad = init.zeros(in_shape, device=out_grad.device, dtype=out_grad.dtype)
+        return set_item(grad, self.idxs, out_grad)
+    
+def get_item(a, idxs):
+    return GetItem(idxs)(a)
+
+class SetItem(TensorOp):
+    def __init__(self, idxs):
+        self.idxs = idxs
+    
+    def compute(self, a, val):
+        a_copy = NDArray(a, device = a.device)
+        a_copy[self.idxs] = val
+        return a_copy
+    
+    def gradient(self, out_grad, node):
+        input_val = node.inputs[1]
+        grad_a = set_item(out_grad, self.idxs, init.zeros_like(input_val))
+        grad_val = get_item(out_grad, self.idxs)
+
+        return grad_a, grad_val
+    
+def set_item(a, idxs, val):
+    return SetItem(idxs)(a, val)
 
