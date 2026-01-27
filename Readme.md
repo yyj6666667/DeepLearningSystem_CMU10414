@@ -1,3 +1,9 @@
+1.27
+* 排查过后， 发现如下问题：
+    * LogSoftmax 数值不稳定，原始实现采用`log(exp(Z) / sum(exp(Z)))`, exp(Z)极小时可能产生log(0),导致-inf， 进而引发NaN， 已修复为 `Z - log(sum(exp(Z)))`
+    * Adam, SGD: 动量项未及时.detach()
+    * BatchNorm : running_mean, running_var需要.detach()
+
 1.21
 * training ResNet9 on cifar10, 梯度爆炸
     * <img src="./images/image copy 6.png" width = "400">

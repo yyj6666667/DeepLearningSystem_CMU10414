@@ -363,7 +363,7 @@ class ReLU(TensorOp):
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
         input_data = node.inputs[0].realize_cached_data()
-        return (Tensor(input_data > 0, device = out_grad.device)) * out_grad
+        return (Tensor(input_data > 0, device=out_grad.device, requires_grad=False)) * out_grad
         ### END YOUR SOLUTION
 
 def relu(a):

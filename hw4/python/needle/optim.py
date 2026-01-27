@@ -27,12 +27,13 @@ class SGD(Optimizer):
         ### BEGIN YOUR SOLUTION
         for param in self.params:
             # l2 正则化
-            grad = param.grad.data + self.weight_decay * param.data
+            grad = (param.grad.data + self.weight_decay * param.data).detach()
 
             # init
             if param not in self.u:
-                self.u[param] = 0
-            self.u[param] = self.momentum * self.u[param] + (1 - self.momentum)* grad
+                self.u[param] = ndl.init.zeros(*param.shape, device=param.device, dtype=param.dtype, requires_grad=False)
+            
+            self.u[param] = (self.momentum * self.u[param] + (1 - self.momentum) * grad).detach()
             param.data -= self.lr * self.u[param]
         ### END YOUR SOLUTION
 
@@ -70,24 +71,23 @@ class Adam(Optimizer):
     def step(self):
         ### BEGIN YOUR SOLUTION
         self.t += 1
-        #debug yyj 1.23
-        for i,param in enumerate(self.params):
-            #debug
-            grad_np = param.grad.data.numpy()
-            if np.isnan(grad_np).any():
-                print(f"\n[DEBUG], NaN is detected in gradient at Index{i}")
-                raise ValueError(f"yyj: NaN gradient at param index{i}")
+        for i, param in enumerate(self.params):
+            if param.grad is None:
+                continue
             # l2
-            grad = param.grad.data + self.weight_decay * param.data
+            grad = (param.grad.data + self.weight_decay * param.data).detach()
 
             if param not in self.m:
-                self.m[param] = 0
+                self.m[param] = ndl.init.zeros(*param.shape, device=param.device, dtype=param.dtype, requires_grad=False)
             if param not in self.v:
-                self.v[param] = 0
-            self.m[param] = self.beta1 * self.m[param] + (1 - self.beta1) * grad
-            self.v[param] = self.beta2 * self.v[param] + (1 - self.beta2) * (grad ** 2)
+                self.v[param] = ndl.init.zeros(*param.shape, device=param.device, dtype=param.dtype, requires_grad=False)
+            
+            self.m[param] = (self.beta1 * self.m[param] + (1 - self.beta1) * grad).detach()
+            self.v[param] = (self.beta2 * self.v[param] + (1 - self.beta2) * (grad ** 2)).detach()
+            
             m_hat = self.m[param] / (1 - self.beta1 ** self.t)
             v_hat = self.v[param] / (1 - self.beta2 ** self.t)
-            tem_grad = m_hat / (v_hat ** 0.5 + self.eps)
-            param.data -= self.lr * ndl.Tensor(tem_grad, dtype = param.data.dtype)
+            
+            update = m_hat / (v_hat ** 0.5 + self.eps)
+            param.data -= self.lr * update.detach()
         ### END YOUR SOLUTION

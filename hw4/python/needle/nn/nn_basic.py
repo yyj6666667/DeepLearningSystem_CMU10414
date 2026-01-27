@@ -162,13 +162,13 @@ class BatchNorm1d(Module):
             diff = x - batch_mean.reshape((1, self.dim)).broadcast_to(x.shape)
             batch_var  = ops.summation(diff * diff , axes = (0,)) / x.shape[0]
 
-            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean.data
-            self.running_var  = (1- self.momentum) * self.running_var + self.momentum * batch_var.data
+            self.running_mean = ((1 - self.momentum) * self.running_mean + self.momentum * batch_mean).detach()
+            self.running_var = ((1 - self.momentum) * self.running_var + self.momentum * batch_var).detach()
 
-            mul_by_weight = (x - batch_mean.reshape((1, self.dim)).broadcast_to(x.shape)) / ops.power_scalar(batch_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
-            
-        elif self.training is False :
-            mul_by_weight = (x - self.running_mean.reshape((1, self.dim)).broadcast_to(x.shape)) / ops.power_scalar(self.running_var + self.eps, 0.5).reshape((1,self.dim)).broadcast_to(x.shape)
+            mul_by_weight = (x - batch_mean.reshape((1, self.dim)).broadcast_to(x.shape)) / ops.power_scalar(batch_var + self.eps, 0.5).reshape((1, self.dim)).broadcast_to(x.shape)
+
+        elif self.training is False:
+            mul_by_weight = (x - self.running_mean.reshape((1, self.dim)).broadcast_to(x.shape)) / ops.power_scalar(self.running_var + self.eps, 0.5).reshape((1, self.dim)).broadcast_to(x.shape)
         
         y = self.weight.reshape((1, self.dim)).broadcast_to(x.shape) * mul_by_weight + self.bias.reshape((1, self.dim)).broadcast_to(x.shape)
         return  y
