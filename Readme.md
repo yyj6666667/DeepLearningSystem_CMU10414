@@ -35,7 +35,7 @@
         #改变视图后， 强转成连续内存
         s = A.strides
         mid_shape = (N, H_new, W_new, K, K, C_in)
-        mid_strides = (s[0], s[1], s[2], s[1], s[2], s[3]) #!!!core!!!
+        mid_strides = (s[0], s[1], s[2], s[1], s[2], s[3]) 
         A_mid = A.as_strided(mid_shape, mid_strides).compact()
         #连续内存上reshape成2D
         A_col = A_mid.reshape((N * H_new * W_new, K * K * C_in))
@@ -65,10 +65,10 @@
     <img src="./images/image copy 3.png" width = "400">
 ---
 
-以下是在实践过程中部分有功能代表性的代码,均为独立**手写**：
+以下是在实践过程中部分有功能代表性的代码：
 
 numpy backend in gpu
-见`hw3/src/ndarray_backend.cu`
+见`src/ndarray_backend.cu`
 ```cpp
 /*   实现后端调用
 *   - EwiseMul, ScalarMul
@@ -205,14 +205,10 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shap
     for (size_t dim = n_dim - 1; dim >= 0; dim--) {
       index[dim]++;
       if (index[dim] < shape[dim]) {
-        //成功加一 
         break;
       } else {
-        //进位了
         index[dim] = 0;
-        //会进入下一个dim-1， 给它加1
         if (dim == 0) {
-          // 进入危险条件， 说明遍历完了
           return;
         }
       }
