@@ -15,7 +15,7 @@
     * 添加 Tensor 类的 `__gt__, __lt__, __ge__, __le__`重载运算符
 
 1.21
-* training ResNet9 on cifar10, 梯度爆炸
+* training ResNet9 on cifar10, 数值不稳定
     * <img src="./images/image copy 6.png" width = "400">
 1.18
 * add TensorOp Convolution, without stride to vertify its correctness first
