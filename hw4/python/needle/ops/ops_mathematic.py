@@ -7,6 +7,7 @@ from ..autograd import NDArray
 from ..autograd import Op, Tensor, Value, TensorOp
 from ..autograd import TensorTuple, TensorTupleOp
 import numpy
+from .. import init
 
 # NOTE: we will import numpy as the array_api
 # as the backend for our computations, this line will change in later homeworks
@@ -357,17 +358,140 @@ def exp(a):
 class ReLU(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        return a * (a > 0)
+        return a.maximum(0)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        input_data = node.inputs[0].realize_cached_data()
-        return (Tensor(input_data > 0, device=out_grad.device, requires_grad=False)) * out_grad
+        return relu_grad(node.inputs[0], out_grad)
         ### END YOUR SOLUTION
+
 
 def relu(a):
     return ReLU()(a)
+
+
+class ReluGrad(TensorOp):
+    def compute(self, a, out_grad):
+        ### BEGIN YOUR SOLUTION
+        return NDArray(numpy.where(a.numpy() > 0, out_grad.numpy(), 0), device=a.device)
+        ### END YOUR SOLUTION
+
+    def gradient(self, out_grad, node):
+        return None, None
+
+
+def relu_grad(a, out_grad):
+    return ReluGrad()(a, out_grad)
+
+
+class GreaterScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a > self.scalar
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0])
+
+
+def greater_scalar(a, scalar):
+    return GreaterScalar(scalar)(a)
+
+
+class Greater(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a > b
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0]), init.zeros_like(node.inputs[1])
+
+
+def greater(a, b):
+    return Greater()(a, b)
+
+
+class GreaterEqualScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a >= self.scalar
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0])
+
+
+def greater_equal_scalar(a, scalar):
+    return GreaterEqualScalar(scalar)(a)
+
+
+class GreaterEqual(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a >= b
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0]), init.zeros_like(node.inputs[1])
+
+
+def greater_equal(a, b):
+    return GreaterEqual()(a, b)
+
+
+class LessScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a < self.scalar
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0])
+
+
+def less_scalar(a, scalar):
+    return LessScalar(scalar)(a)
+
+
+class Less(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a < b
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0]), init.zeros_like(node.inputs[1])
+
+
+def less(a, b):
+    return Less()(a, b)
+
+
+class LessEqualScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a <= self.scalar
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0])
+
+
+def less_equal_scalar(a, scalar):
+    return LessEqualScalar(scalar)(a)
+
+
+class LessEqual(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a <= b
+
+    def gradient(self, out_grad, node):
+        return init.zeros_like(node.inputs[0]), init.zeros_like(node.inputs[1])
+
+
+def less_equal(a, b):
+    return LessEqual()(a, b)
+
 
 #add Max
 class Max(TensorOp):

@@ -133,12 +133,14 @@ class Sequential(Module):
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        log_softmax = ops.logsoftmax(logits)
         batch_size = logits.shape[0]
         y_hot = init.one_hot(logits.shape[1], y)
-        Z_hot = log_softmax * y_hot
-        loss = -ops.summation(ops.summation(Z_hot, axes = (1,))) / batch_size
-        return loss
+        
+        # Stable Cross Entropy: LogSumExp(logits) - logits_y
+        lse = ops.logsumexp(logits, axes=(1,))
+        logits_y = ops.summation(logits * y_hot, axes=(1,))
+        
+        return ops.summation(lse - logits_y) / batch_size
         ### END YOUR SOLUTION
 
 

@@ -358,6 +358,30 @@ class Tensor(Value):
 
     def transpose(self, axes=None):
         return needle.ops.Transpose(axes)(self)
+
+    def __gt__(self, other):
+        if isinstance(other, Tensor):
+            return needle.ops.Greater()(self, other)
+        else:
+            return needle.ops.GreaterScalar(other)(self)
+
+    def __ge__(self, other):
+        if isinstance(other, Tensor):
+            return needle.ops.GreaterEqual()(self, other)
+        else:
+            return needle.ops.GreaterEqualScalar(other)(self)
+
+    def __lt__(self, other):
+        if isinstance(other, Tensor):
+            return needle.ops.Less()(self, other)
+        else:
+            return needle.ops.LessScalar(other)(self)
+
+    def __le__(self, other):
+        if isinstance(other, Tensor):
+            return needle.ops.LessEqual()(self, other)
+        else:
+            return needle.ops.LessEqualScalar(other)(self)
     
     #yyj: add
     def permute(self, axes=None):
@@ -381,6 +405,12 @@ def compute_gradient_of_variables(self_tensor, out_grad):
     
     for node in nodes_topo:
         node.grad = sum_node_list(node_out_grads[node])
+        
+        # Debug: Check for NaN in gradients
+        if numpy.isnan(node.grad.numpy()).any():
+            print(f"DEBUG: NaN detected in gradient for node {node}")
+            if node.op:
+                print(f"DEBUG: Node op: {node.op}")
 
         if node.op is None:
             continue

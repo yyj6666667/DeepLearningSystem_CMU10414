@@ -4,6 +4,16 @@
     * Adam, SGD: 动量项未及时.detach()
     * BatchNorm : running_mean, running_var需要.detach()
 
+* 继续排查， 反向传播期间`sum_to_all_nodes`处安插打印信息：
+    ```py
+    if numpy.isnan(node.grad.numpy()).any():
+            print(f"DEBUG: NaN detected in gradient for node {node}")
+            if node.op:
+                print(f"DEBUG: Node op: {node.op}")
+    ```
+* 修改ReLU算子的实现，将不合法位置直接置零，截断NaN的传播
+    * 添加 Tensor 类的 `__gt__, __lt__, __ge__, __le__`重载运算符
+
 1.21
 * training ResNet9 on cifar10, 梯度爆炸
     * <img src="./images/image copy 6.png" width = "400">
