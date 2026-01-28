@@ -1,4 +1,6 @@
-1.28
+Don't import torch, build it
+---
+
 * Needle vs PyTorch 性能对比
     * 为验证 Needle 框架的正确性与效率，在统一硬件环境（CPU）与超参数条件下，对比了 Needle 与 PyTorch 在 MNIST 数据集上的表现。
     * 选用了MoE 和 MLP ResNet模型
@@ -16,15 +18,7 @@
         * 引入了 Importance Loss (w=0.01) 以平衡专家负载。
         <img src="assets/comparison/moe_mnist_comparison.png" width="800">
 
-* 使用MoE训练Mnist
-    * np为后端
-    <img src = "assets/images/image copy 11.png" width = 400>
-* 使用MLPResnet训练Mnist
-    * np为后端
-    <img src = "assets/images/image copy 10.png" width = 400>
-* 切换后端 `np` `nd`对比如下，说明上层的模型搭建没有问题
-    * 推测nan产生于BP期间
-    <img src = "assets/images/image copy 7.png" width = 400>
+---
 
 1.27
 * 排查过后， 发现如下问题：
@@ -592,6 +586,16 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 ---
 
 ##### 一些零散的先放在这里：
+
+* 使用MoE训练Mnist
+    * np为后端
+    <img src = "assets/images/image copy 11.png" width = 400>
+* 使用MLPResnet训练Mnist
+    * np为后端
+    <img src = "assets/images/image copy 10.png" width = 400>
+* 切换后端 `np` `nd`对比如下，说明上层的模型搭建没有问题
+    * 推测nan产生于BP期间
+    <img src = "assets/images/image copy 7.png" width = 400>
 
 
 12.15
