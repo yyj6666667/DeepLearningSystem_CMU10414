@@ -1,13 +1,30 @@
 1.28
+* Needle vs PyTorch 性能对比
+    * 为验证 Needle 框架的正确性与效率，在统一硬件环境（CPU）与超参数条件下，对比了 Needle 与 PyTorch 在 MNIST 数据集上的表现。
+    * 选用了MoE 和 MLP ResNet模型
+    * 测试环境与配置：
+        * 数据集：MNIST (使用相同的 `.gz` 原始文件进行读取，确保输入一致)。
+        * 优化器：Adam (lr=0.001, weight_decay=0.001)。
+        * Batch Size：100
+        * 硬件：intel i7 ,RAM = 16GB
+    * MLP ResNet 对比：
+        * 模型结构：1个线性层 + 3个 Residual Blocks (每个 Block 包含 2个线性层、BatchNorm 和 Dropout) + 1个线性层。
+        * 结果显示 Needle 在收敛趋势上与 PyTorch 高度一致，验证了 Autograd 与 NN 模块的严谨性。
+        <img src="assets/comparison/mlp_resnet_comparison.png" width="800">
+    * MoE (Mixture of Experts) 对比：
+        * 模型结构：Flatten + Linear + ReLU + MoE (4 experts, top-1 routing) + ReLU + Linear。
+        * 引入了 Importance Loss (w=0.01) 以平衡专家负载。
+        <img src="assets/comparison/moe_mnist_comparison.png" width="800">
+
 * 使用MoE训练Mnist
     * np为后端
-    <img src = "images/image copy 11.png" width = 400>
+    <img src = "assets/images/image copy 11.png" width = 400>
 * 使用MLPResnet训练Mnist
     * np为后端
-    <img src = "images/image copy 10.png" width = 400>
+    <img src = "assets/images/image copy 10.png" width = 400>
 * 切换后端 `np` `nd`对比如下，说明上层的模型搭建没有问题
     * 推测nan产生于BP期间
-    <img src = "images/image copy 7.png" width = 400>
+    <img src = "assets/images/image copy 7.png" width = 400>
 
 1.27
 * 排查过后， 发现如下问题：
@@ -27,15 +44,15 @@
 
 1.21
 * training ResNet9 on cifar10, 数值不稳定
-    * <img src="./images/image copy 6.png" width = "400">
+    * <img src="./assets/images/image copy 6.png" width = "400">
 1.18
 * add TensorOp Convolution, without stride to vertify its correctness first
 * reason why we choose `im2col`and the trade-off: Im2col() arranges the data in a way that **the memory accesses are regular for Matrix Multiplication**.Im2col() function adds a lot of **data redundancy** though, but the performance benefit of using Gemm outweigh this data redundancy.空间换时间
    * to better illustrate this, here is an image:
-   <img src="./images/image copy 4.png" width = "400">
+   <img src="./assets/images/image copy 4.png" width = "400">
 
    * applying the same flattening to the kernel:
-   <img src="./images/image copy 5.png" width = "400">
+   <img src="./assets/images/image copy 5.png" width = "400">
 
 * 参考优秀作品，大多使用NDArray的视图改变(Strided-View方法)，最后同样利用上了GEMM，而且kernel直接进入缓存，是非常优雅的解决办法，尤其是显存受限的场景下
 * 本仓库的实现则是传统的`im2col`,对显存要求更高。
@@ -65,15 +82,15 @@
 * debug， TensorOp transpose needs to fit in the new NDArray backend version, 现在的transpose通过改变NDArray的视图实现（查看numpy core, 也是这么干的），也可以改变内存，需要添置NDArray调用。 内存的分配通过cpp文件的AlignedArray内置的构造函数实现
 * 用户态代码 -> NDArray -> Device -> pybind11绑定层 -> cpp / cuda底层  
     * 调用链示意：
-    <img src="./images/15.png" alt="alt text" width="400">
+    <img src="./assets/images/15.png" alt="alt text" width="400">
 * Stack 触发NoneType报错， 通过追踪调用栈解决; LogSumExp 触发"Tensor has no attribute xxx"报错， 追踪发现其 compute 实现错误返回了Tensor，期望NDArray， 已解决
 * 幸好安插了“AssertionError: cannot broadcast to fewer dimension”，现怀疑 ops summation有维度处理错误
 * 容易混淆的点： 同样是调用xx.broadcast_to(), xx belongs to Tensor, NDArray调用完全不同
     * Tensor.broadcast_to(xx)调用链
-    <img src="./images/16.png" width="400">
+    <img src="./assets/images/16.png" width="400">
     
     * NDArray.broadcast_to(xx)调用链
-    <img src="./images/image copy 3.png" width = "400">
+    <img src="./assets/images/image copy 3.png" width = "400">
 ---
 
 以下是在实践过程中部分有功能代表性的代码：
@@ -470,7 +487,7 @@ construct and debug log：
 ---
 1.13
 * 移植的时候出现问题：
-![alt text](images/14.png)
+![alt text](assets/images/14.png)
   为了计算图的延续， 必须在BACKEND添加max， 支持反向传播
 * add TensorOp Stack, Max, Tanh, 其中Stack最不好写， Stack.gradient还没有想明白
 * 调用gradient 的paradigm是外面写一个构造函数然后自己调用， 哈哈哈
@@ -506,7 +523,7 @@ construct and debug log：
   * 可以合法位nullptr， 更容易在内部检查或者抛错
 * 增添了如下调用的GPU端实现
 
-    <img src="images/image copy 2.png" alt="alt text" width="400">
+    <img src="assets/images/image copy 2.png" alt="alt text" width="400">
 
 * 这是自从hw2 model， data， optimizer 分块实现以来码的最爽的一次
 
@@ -554,21 +571,21 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 * 单独跑MLPResNet， 使用不同的数据预先方式：
     * 不处理： 
 
-      <img src="images/image-10.png" alt="alt text" width="400">
+      <img src="assets/images/image-10.png" alt="alt text" width="400">
 
       hidden-norm 从100到150， 表现力更强， 前期收敛更快， 然而结果差别不大
 
-      <img src="images/image12.png" alt="alt text" width="400">
+      <img src="assets/images/image12.png" alt="alt text" width="400">
 
     * RandomFlipHorizontal:
       水平翻转强迫模型学习更一般的特征
 
-      <img src="images/image-9.png" alt="alt text" width="400">
+      <img src="assets/images/image-9.png" alt="alt text" width="400">
 
       真打脸， 还不如不处理，可能是epoch太少了
     * RandomCrop:
 
-      <img src="images/image-11.png" alt="alt text" width="400">
+      <img src="assets/images/image-11.png" alt="alt text" width="400">
       
       也差一些， 这个还能理解一些， 裁剪了一些特征
 
@@ -583,13 +600,11 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 * hw1 all pass , not totally understood
 * __call__, __init__, init__, hhhhhh
 * 实现nn.Linear, 对__add__ 重载 和 broadcast 手动实现有了更深的理解
-* 无独有偶： 为什么`Transpose`,` Reshape` 做逆运算就是微分了？ 为什么`Broadcast_to`的微分恰好是`Summation`? 不是想当然的！ 因为我们考察的是每个元素在forward过程中的贡献！！ 这样就能理解为什么抽象的非数值操作也有微分的概念。
-
 ---
 12.16
 * keepdims, self.axis, .reshape(shape).broadcast_to(XX.shape)  
     give you an exp :
-<img src="images/image-2.png" alt="alt text" width="200">
+<img src="assets/images/image-2.png" alt="alt text" width="200">
 
 
 12.17
@@ -598,7 +613,7 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 * batchnorm, layernorm , dropout class finished
 * hw1构建的基础功能，调用他们作为原子操作，op s--> module,往下递归微分
 * 在写SGD.step() 时， 对params的理解：
-<img src="images/image-4.png" alt="alt text" width="500">
+<img src="assets/images/image-4.png" alt="alt text" width="500">
 
 * grad 也是Tensor, 这是出于计算方便的工程考量，并不作为node加入计算图，实际上， 为了节约内存，常用懒汉式在BP期才加载
 * 实现momentum 和 Adam, Adam's bias correction用来避免momentum策略导致的训练初期步长太小
@@ -608,15 +623,7 @@ new_strides = tuple(self.strides[iter] for iter in new_axes) #真闹心啊， �
 12.19
 
 * 在实现ResidualBlock的过程中， nn.Sequential串联起module, Module 的封装与数据是分离的
-<img src="images/image-6.png" alt="alt text" width="400">
-
-* 一些魔法方法和自动调用的对应：
-<img src="images/12.png" alt="alt text" width="350">
-
-* 常用内置函数
-<img src="images/13.png" alt = "alt text" width = "350">
-
-
+<img src="assets/images/image-6.png" alt="alt text" width="400">
 * datas = self.dataset[batch_indices], dataset 传回来的是tuple，所以这里batch_indices数组传入后， 得到的datas是数组tuple
 * Tensor(data) for data in datas 也是对于tuple中的一个元素操作
 
