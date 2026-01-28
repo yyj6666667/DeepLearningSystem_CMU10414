@@ -109,8 +109,10 @@ def train_mnist(
     opt = optimizer(model.parameters(), lr = lr, weight_decay=weight_decay)
 
     for e in range(epochs):
+        start_time = time.time()
         train_corr, train_loss = epoch(train_loader, model, opt=opt)
-        print(f"Epoch {e + 1}  train_corr = {train_corr:.4f}, train_loss= {train_loss:.4f}")
+        end_time = time.time()
+        print(f"Epoch {e + 1}  train_corr = {train_corr:.4f}, train_loss= {train_loss:.4f}, time = {end_time-start_time:.2f}s")
     
     test_corr, test_loss = epoch(test_loader, model, None)
     print(f"Final Test: test_corr = {test_corr:.4f}, test_loss= {test_loss:.4f}")
