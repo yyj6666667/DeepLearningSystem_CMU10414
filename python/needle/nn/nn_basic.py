@@ -276,13 +276,13 @@ class MoE(Module):
         selected_weights = gate_weights * mask
         
         # 使用 split 替代 getitem
-        weights_list = ops.split(selected_weights, axis=1)
+        #weights_list = ops.split(selected_weights, axis=1)
         
         final_output = None
         for i in range(self.num_experts):
             expert_output = self.experts[i](x)
-            # w = selected_weights[:, i:i+1].broadcast_to(expert_output.shape)
-            w = weights_list[i].reshape((x.shape[0], 1)).broadcast_to(expert_output.shape)
+            w = selected_weights[:, i:i+1].broadcast_to(expert_output.shape)
+            #w = weights_list[i].reshape((x.shape[0], 1)).broadcast_to(expert_output.shape)
             if final_output is None:
                 final_output = expert_output * w
             else:

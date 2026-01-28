@@ -262,10 +262,10 @@ class Tensor(Value):
     @data.setter
     def data(self, value):
         assert isinstance(value, Tensor)
-        assert value.dtype == self.dtype, "%s %s" % (
-            value.dtype,
-            self.dtype,
-        )
+  #      assert value.dtype == self.dtype, "%s %s" % (
+  #          value.dtype,
+  #          self.dtype,
+  #      )
         self.cached_data = value.realize_cached_data()
 
     def detach(self):

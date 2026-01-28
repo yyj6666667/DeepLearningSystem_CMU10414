@@ -40,7 +40,7 @@ def zeros(*shape, device=None, dtype="float32", requires_grad=False):
     )
 
 
-def randb(*shape, p=0.5, device=None, dtype="bool", requires_grad=False):
+def randb(*shape, p=0.5, device=None, dtype="float32", requires_grad=False):
     """Generate binary random Tensor"""
     device = ndl.cpu() if device is None else device
     array = device.rand(*shape) <= p

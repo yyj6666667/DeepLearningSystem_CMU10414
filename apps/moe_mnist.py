@@ -6,7 +6,7 @@ import needle.ops as ops
 import numpy as np
 import time
 
-def train_mnist_moe(batch_size=100, epochs=3, lr=0.001, weight_decay=0.001, num_experts=4):
+def train_mnist_moe(batch_size=100, epochs=10, lr=0.001, weight_decay=0.001, num_experts=4):
     device = ndl.cpu()
     
     # Load MNIST data
@@ -16,6 +16,12 @@ def train_mnist_moe(batch_size=100, epochs=3, lr=0.001, weight_decay=0.001, num_
     )
     train_loader = ndl.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     
+    test_dataset = ndl.data.MNISTDataset(
+        "data/t10k-images-idx3-ubyte.gz",
+        "data/t10k-labels-idx1-ubyte.gz"
+    )
+    test_loader = ndl.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
     # Define MoE Model
     class MoEMNIST(nn.Module):
         def __init__(self, num_experts=4, device=None):
@@ -30,7 +36,7 @@ def train_mnist_moe(batch_size=100, epochs=3, lr=0.001, weight_decay=0.001, num_
             )
             self.importance_loss = nn.ImportanceLoss(w=0.01)
 
-        def forward(self, x):
+        def forward(self, x): 
             return self.model(x)
 
     model = MoEMNIST(num_experts=num_experts, device=device)
@@ -83,7 +89,21 @@ def train_mnist_moe(batch_size=100, epochs=3, lr=0.001, weight_decay=0.001, num_
         usage_dist = expert_usage / total_samples
         
         print(f"Epoch {epoch}: Acc: {avg_acc:.4f}, Loss: {avg_loss:.4f}, Time: {end_time-start_time:.2f}s")
-        print(f"Expert Usage Distribution: {usage_dist}")
+        #print(f"    Expert Usage Distribution: {usage_dist}")
+    
+    # Test
+    model.eval()
+    test_correct = 0
+    test_samples = 0
+    for batch in test_loader:
+        X, y = batch
+        X, y = ndl.Tensor(X, device=device), ndl.Tensor(y, device=device)
+        logits = model(X)
+        test_correct += np.sum(np.argmax(logits.numpy(), axis=1) == y.numpy())
+        test_samples += y.shape[0]
+    
+    print(f"Final Test Accuracy: {test_correct / test_samples:.4f}")
+    
 
 if __name__ == "__main__":
     train_mnist_moe()

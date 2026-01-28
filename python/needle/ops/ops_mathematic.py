@@ -909,7 +909,9 @@ class GetItem(TensorOp):
     
     def gradient(self, out_grad, node):
         in_shape = node.inputs[0].shape
-        grad = init.zeros(in_shape, device=out_grad.device, dtype=out_grad.dtype)
+        if isinstance(in_shape, int):
+            in_shape = (in_shape,)
+        grad = init.zeros(*in_shape, device=out_grad.device, dtype=out_grad.dtype)
         return set_item(grad, self.idxs, out_grad)
     
 def get_item(a, idxs):
@@ -920,7 +922,10 @@ class SetItem(TensorOp):
         self.idxs = idxs
     
     def compute(self, a, val):
-        a_copy = NDArray(a, device = a.device)
+        if BACKEND == "nd":
+            a_copy = NDArray(a, device=a.device)
+        else:
+            a_copy = a.copy()
         a_copy[self.idxs] = val
         return a_copy
     

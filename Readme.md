@@ -1,3 +1,12 @@
+1.28
+* 切换backend `np` `nd`对比如下，说明上层的模型搭建没有问题，nan产生于算子上
+        <img src = "images/image copy 7.png" width = 400>
+* 成功以np为后端，使用MoE训练Mnist
+        <img src = "images/image copy 8.png" width = 400>
+* 以np为后端， 使用MLPResnet训练Mnist
+        <img src = "images/image copy 9.png" width = 400>
+
+
 1.27
 * 排查过后， 发现如下问题：
     * LogSoftmax 数值不稳定，原始实现采用`log(exp(Z) / sum(exp(Z)))`, exp(Z)极小时可能产生log(0),导致-inf， 进而引发NaN， 已修复为 `Z - log(sum(exp(Z)))`
