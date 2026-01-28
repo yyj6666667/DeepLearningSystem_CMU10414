@@ -76,9 +76,9 @@ class Adam(Optimizer):
                 continue
             
             # Debug: Check for NaN in gradients
-            if np.isnan(param.grad.numpy()).any():
-                print(f"DEBUG: NaN detected in gradient for parameter {i}")
-                # raise ValueError(f"NaN gradient at parameter {i}")
+         #   if np.isnan(param.grad.numpy()).any():
+         #       print(f"DEBUG: NaN detected in gradient for parameter {i}")
+         #       # raise ValueError(f"NaN gradient at parameter {i}")
 
             # l2
             grad = (param.grad.data + self.weight_decay * param.data).detach()

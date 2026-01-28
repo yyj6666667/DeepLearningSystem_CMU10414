@@ -7,13 +7,19 @@ from typing import Any, Callable, Iterable, Union
 import numpy as np
 
 from . import ndarray_backend_numpy
-from . import ndarray_backend_cpu  # type: ignore[attr-defined]
+try:
+    from . import ndarray_backend_cpu
+except ImportError:
+    ndarray_backend_cpu = None
 #yyj: 用 C++/CUDA 编写 的代码, 通过 pybind11/ctypes 编译成 Python 可调用的模块
 
 
 # math.prod not in Python 3.7
 def prod(x: Iterable[int]) -> int:
-    return reduce(operator.mul, x, 1)
+    ret = reduce(operator.mul, x, 1)
+    if isinstance(ret, tuple):
+        ret = prod(ret)
+    return ret
 
 
 class BackendDevice:
@@ -160,7 +166,7 @@ class NDArray:
         array._offset = offset
         array._device = device if device is not None else default_device()
         if handle is None:
-            array._handle = array.device.Array(prod(shape))
+            array._handle = array.device.Array(int(prod(shape)))
         else:
             array._handle = handle
         return array
@@ -364,9 +370,11 @@ class NDArray:
         if start is None:
             start = 0
         if start < 0:
-            start = self.shape[dim]
+            start = self.shape[dim] + start
         if stop is None:
             stop = self.shape[dim]
+        if isinstance(stop, tuple):
+            stop = stop[0]
         if stop < 0:
             stop = self.shape[dim] + stop
         if step is None:
@@ -732,4 +740,5 @@ def permute(a: NDArray, axes: tuple[int, ...]) -> NDArray:
     return a.permute(axes)
 
 def max(a: NDArray, axis = None, keepdims = None) -> NDArray:
+    return a.max(axis, keepdims=keepdims)
     return a.max(axis, keepdims=keepdims)

@@ -1,0 +1,3 @@
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\ndarray_backend_cpu.dir/objects.a
+C:\TDM-GCC-64\bin\ar.exe qc CMakeFiles\ndarray_backend_cpu.dir/objects.a @CMakeFiles\ndarray_backend_cpu.dir\objects1.rsp
+C:\TDM-GCC-64\bin\g++.exe -std=c++11 -O2 -march=native  -shared -o ..\python\needle\backend_ndarray\ndarray_backend_cpu.cp312-win_amd64.pyd -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles\ndarray_backend_cpu.dir/objects.a -Wl,--no-whole-archive @CMakeFiles\ndarray_backend_cpu.dir\linklibs.rsp

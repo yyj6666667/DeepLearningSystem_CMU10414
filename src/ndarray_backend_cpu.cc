@@ -5,6 +5,15 @@
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
+#include <cstdint>
+#include <cassert>
+#include <algorithm>
+#include <vector>
+#include <cstring>
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#include <malloc.h>
+#endif
 
 namespace needle {
 namespace cpu {
@@ -22,11 +31,22 @@ const size_t ELEM_SIZE = sizeof(scalar_t);
  */
 struct AlignedArray {
   AlignedArray(const size_t size) {
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    ptr = (scalar_t*)_aligned_malloc(size * ELEM_SIZE, ALIGNMENT);
+    if (ptr == nullptr) throw std::bad_alloc();
+#else
     int ret = posix_memalign((void**)&ptr, ALIGNMENT, size * ELEM_SIZE);
     if (ret != 0) throw std::bad_alloc();
+#endif
     this->size = size;
   }
-  ~AlignedArray() { free(ptr); }
+  ~AlignedArray() {
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif
+  }
   size_t ptr_as_int() {return (size_t)ptr; }
   scalar_t* ptr;
   size_t size;
@@ -81,9 +101,9 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shap
     out->ptr[cnt] = a.ptr[pos];
     
     //以下管理进位
-    for (size_t dim = n_dim - 1; dim >= 0; dim--) {
+    for (int dim = (int)n_dim - 1; dim >= 0; dim--) {
       index[dim]++;
-      if (index[dim] < shape[dim]) {
+      if (index[dim] < (size_t)shape[dim]) {
         //成功加一 
         break;
       } else {
@@ -128,17 +148,17 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<int32_t>
     out->ptr[pos_out_i] = a.ptr[i];
 
     //idx update
-    for (int i = n_dim - 1; i >= 0; i--) {
-      idx[i] ++;
-      if (idx[i] < shape[i]) {
+    for (int j = (int)n_dim - 1; j >= 0; j--) {
+      idx[j] ++;
+      if (idx[j] < (size_t)shape[j]) {
         // 正常
         break;
       } else {
         // 进位
-        idx[i] = 0;
+        idx[j] = 0;
 
         // 终结P
-        if (i == 0) {
+        if (j == 0) {
           //printf("遍历完成\n");
           return;
         }

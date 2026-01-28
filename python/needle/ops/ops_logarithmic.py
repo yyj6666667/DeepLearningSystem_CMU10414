@@ -12,13 +12,12 @@ from ..backend_selection import array_api, BACKEND
 class LogSoftmax(TensorOp):
     def compute(self, Z: NDArray) -> NDArray:
         ### BEGIN YOUR SOLUTION
-        assert isinstance(Z, NDArray), "yyj: Z must be NDArray"
         last_axis = len(Z.shape) - 1
-        z_max = Z.max((last_axis,), keepdims=True)
-        z_stable = Z - z_max.broadcast_to(Z.shape)
-        z_sum_exp = z_stable.exp().sum(last_axis, keepdims=True)
+        z_max = Z.max(axis=(last_axis,), keepdims=True)
+        z_stable = Z - array_api.broadcast_to(z_max, Z.shape)
+        z_sum_exp = array_api.sum(array_api.exp(z_stable), axis=(last_axis,), keepdims=True)
         log_z_sum_exp = array_api.log(z_sum_exp)
-        return z_stable - log_z_sum_exp.broadcast_to(Z.shape)
+        return z_stable - array_api.broadcast_to(log_z_sum_exp, Z.shape)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad: Tensor, node: Tensor):
@@ -34,6 +33,25 @@ def logsoftmax(a: Tensor) -> Tensor:
     return LogSoftmax()(a)
 
 
+class Softmax(TensorOp):
+    def compute(self, Z: NDArray) -> NDArray:
+        last_axis = len(Z.shape) - 1
+        z_max = Z.max(axis=(last_axis,), keepdims=True)
+        z_stable = Z - array_api.broadcast_to(z_max, Z.shape)
+        z_exp = array_api.exp(z_stable)
+        z_sum_exp = array_api.sum(z_exp, axis=(last_axis,), keepdims=True)
+        return z_exp / array_api.broadcast_to(z_sum_exp, Z.shape)
+
+    def gradient(self, out_grad: Tensor, node: Tensor):
+        s = node
+        return s * (out_grad - summation(out_grad * s, axes=(len(s.shape) - 1,)).reshape(
+            tuple(s.shape[:-1]) + (1,)).broadcast_to(s.shape))
+
+
+def softmax(a: Tensor) -> Tensor:
+    return Softmax()(a)
+
+
 # 对它微分直接得到softmax哈哈， 循环了
 class LogSumExp(TensorOp):
     def __init__(self, axes: Optional[tuple] = None) -> None:
@@ -41,9 +59,8 @@ class LogSumExp(TensorOp):
 
     def compute(self, Z) -> "NDArray":
         ### BEGIN YOUR SOLUTION
-        assert isinstance(Z, NDArray), "yyj: Z must be NDArray"
-        Z_max = array_api.max(Z, axis=self.axes, keepdims=True)
-        Z_stable = Z - Z_max.broadcast_to(Z.shape)
+        Z_max = Z.max(axis=self.axes, keepdims=True)
+        Z_stable = Z - array_api.broadcast_to(Z_max, Z.shape)
         log_sum_exp = array_api.log(
             array_api.sum(
                 array_api.exp(Z_stable),
@@ -51,8 +68,7 @@ class LogSumExp(TensorOp):
                 keepdims=False
             )
         )
-        result = Z_max.reshape(log_sum_exp.shape) + log_sum_exp
-        return result
+        return array_api.reshape(Z_max, log_sum_exp.shape) + log_sum_exp
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad: Tensor, node: Tensor):

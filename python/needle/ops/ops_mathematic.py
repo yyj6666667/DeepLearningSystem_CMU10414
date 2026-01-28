@@ -165,13 +165,16 @@ class Transpose(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
         if self.axes is None:
-            #默认交换沿着内存增长方向的粒度最细的两个维度（即最后两个维度）
-            new_axes = tuple(range(len(a.shape) - 2)) + (len(a.shape) - 1, len(a.shape) - 2)
-        else :
+            new_axes = list(range(len(a.shape)))
+            new_axes[-1], new_axes[-2] = new_axes[-2], new_axes[-1]
+        else:
             new_axes = list(range(len(a.shape)))
             new_axes[self.axes[0]], new_axes[self.axes[1]] = new_axes[self.axes[1]], new_axes[self.axes[0]]
-        res = NDArray.permute(a, new_axes)
-        return res
+        
+        if BACKEND == "nd":
+            return a.permute(tuple(new_axes))
+        else:
+            return a.transpose(tuple(new_axes))
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
@@ -355,34 +358,147 @@ def exp(a):
     return Exp()(a)
 
 
+class GreaterScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a > self.scalar
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0
+
+
+def greater_scalar(a, scalar):
+    return GreaterScalar(scalar)(a)
+
+
+class Greater(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a > b
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0, out_grad * 0
+
+
+def greater(a, b):
+    return Greater()(a, b)
+
+
+class GreaterEqualScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a >= self.scalar
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0
+
+
+def greater_equal_scalar(a, scalar):
+    return GreaterEqualScalar(scalar)(a)
+
+
+class GreaterEqual(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a >= b
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0, out_grad * 0
+
+
+def greater_equal(a, b):
+    return GreaterEqual()(a, b)
+
+
+class LessScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a < self.scalar
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0
+
+
+def less_scalar(a, scalar):
+    return LessScalar(scalar)(a)
+
+
+class Less(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a < b
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0, out_grad * 0
+
+
+def less(a, b):
+    return Less()(a, b)
+
+
+class LessEqualScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+
+    def compute(self, a: NDArray):
+        return a <= self.scalar
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0
+
+
+def less_equal_scalar(a, scalar):
+    return LessEqualScalar(scalar)(a)
+
+
+class LessEqual(TensorOp):
+    def compute(self, a: NDArray, b: NDArray):
+        return a <= b
+
+    def gradient(self, out_grad, node):
+        return out_grad * 0, out_grad * 0
+
+
+def less_equal(a, b):
+    return LessEqual()(a, b)
+
+
+class Where(TensorOp):
+    def compute(self, cond, x, y):
+        cond_np = cond if isinstance(cond, numpy.ndarray) else cond.numpy()
+        x_np = x if isinstance(x, numpy.ndarray) else x.numpy()
+        y_np = y if isinstance(y, numpy.ndarray) else y.numpy()
+        res_np = numpy.where(cond_np, x_np, y_np)
+        if isinstance(x, numpy.ndarray):
+            return res_np
+        return NDArray(res_np, device=x.device)
+
+    def gradient(self, out_grad, node):
+        cond, x, y = node.inputs
+        return None, where(cond, out_grad, out_grad * 0), where(cond, out_grad * 0, out_grad)
+
+
+def where(cond, x, y):
+    return Where()(cond, x, y)
+
+
 class ReLU(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        return a.maximum(0)
+        return array_api.maximum(a, 0)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return relu_grad(node.inputs[0], out_grad)
+        return where(node.inputs[0] > 0, out_grad, out_grad * 0)
         ### END YOUR SOLUTION
 
 
 def relu(a):
     return ReLU()(a)
-
-
-class ReluGrad(TensorOp):
-    def compute(self, a, out_grad):
-        ### BEGIN YOUR SOLUTION
-        return NDArray(numpy.where(a.numpy() > 0, out_grad.numpy(), 0), device=a.device)
-        ### END YOUR SOLUTION
-
-    def gradient(self, out_grad, node):
-        return None, None
-
-
-def relu_grad(a, out_grad):
-    return ReluGrad()(a, out_grad)
 
 
 class GreaterScalar(TensorOp):
@@ -495,17 +611,36 @@ def less_equal(a, b):
 
 #add Max
 class Max(TensorOp):
-    def __init__(self, axis = None, keepdims = False):
+    def __init__(self, axis=None, keepdims=False):
         self.axis = axis
         self.keepdims = keepdims
 
     def compute(self, a):
-        return array_api.max(a, axis = self.axis, keepdims=self.keepdims)
-    
+        return array_api.max(a, axis=self.axis, keepdims=self.keepdims)
+
     def gradient(self, out_grad, node):
-        forward_res = node.realize_cached_data()
-        mask_one    = node.inputs[0] == forward_res.reshape(-1, 1) #有点问题， 如果有多个最大值容易造成误差
-        return mask_one * out_grad
+        input_a = node.inputs[0]
+        # 构造与 input_a 形状一致的 out_grad 以便广播
+        if self.keepdims:
+            grad_reshaped = out_grad
+        else:
+            shape = list(input_a.shape)
+            axes = self.axis if self.axis is not None else range(len(shape))
+            if isinstance(axes, int):
+                axes = [axes]
+            for ax in axes:
+                shape[ax] = 1
+            grad_reshaped = out_grad.reshape(tuple(shape))
+        
+        # 构造 mask：输入中等于最大值的地方为 1
+        # node.realize_cached_data() 是 forward 的结果，即 max(input_a)
+        # 我们需要将其 reshape 到与 grad_reshaped 一致的形状（即带 1 的形状）
+        max_val = node
+        if not self.keepdims:
+            max_val = max_val.reshape(grad_reshaped.shape)
+        
+        mask = (input_a == max_val.broadcast_to(input_a.shape))
+        return grad_reshaped.broadcast_to(input_a.shape) * mask
 
 def max(a, axis, keepdims):
     return Max(axis, keepdims)(a)
@@ -670,11 +805,14 @@ def undilate(a, axes, dilation):
 
 
 class Permute(TensorOp):
-    def __init__(self, axes :tuple):
+    def __init__(self, axes: tuple):
         self.axes = axes
 
-    def compute(self, A)-> NDArray:
-        return array_api.permute(A, self.axes)
+    def compute(self, A) -> NDArray:
+        if BACKEND == "nd":
+            return A.permute(self.axes)
+        else:
+            return A.transpose(self.axes)
     
     def gradient(self, out_grad, node):
         assert len(self.axes) == len(out_grad.shape)
@@ -790,6 +928,13 @@ class SetItem(TensorOp):
         input_val = node.inputs[1]
         grad_a = set_item(out_grad, self.idxs, init.zeros_like(input_val))
         grad_val = get_item(out_grad, self.idxs)
+        if grad_val.shape != input_val.shape:
+            axes = []
+            for i, (dim_out, dim_in) in enumerate(zip(grad_val.shape, input_val.shape)):
+                if dim_in == 1 and dim_out > 1:
+                    axes.append(i)
+            grad_val = summation(grad_val, tuple(axes))
+            grad_val = reshape(grad_val, input_val.shape)
 
         return grad_a, grad_val
     

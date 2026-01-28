@@ -1,0 +1,1 @@
+-isystem C:/ProgramData/anaconda3/include -isystem "C:/ProgramData/anaconda3/Lib/site-packages/pybind11/include"

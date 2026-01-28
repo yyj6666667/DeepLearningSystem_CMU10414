@@ -253,3 +253,50 @@ class Residual(Module):
         ### BEGIN YOUR SOLUTION
         return self.fn(x) + x
         ### END YOUR SOLUTION
+
+
+class MoE(Module):
+    def __init__(self, input_size, output_size, num_experts, top_k=1, device=None, dtype="float32"):
+        super().__init__()
+        self.num_experts = num_experts
+        self.top_k = top_k
+        self.experts = [Linear(input_size, output_size, device=device, dtype=dtype) for _ in range(num_experts)]
+        for i, expert in enumerate(self.experts):
+            setattr(self, f"expert_{i}", expert)
+        self.gate = Linear(input_size, num_experts, bias=False, device=device, dtype=dtype)
+
+    def forward(self, x: Tensor) -> Tensor:
+        gate_logits = self.gate(x)
+        gate_weights = ops.softmax(gate_logits)
+        self.gate_weights = gate_weights
+        
+        # Top-1 routing mask
+        max_weights = ops.max(gate_weights, axis=1, keepdims=True).broadcast_to(gate_weights.shape)
+        mask = (gate_weights >= max_weights)
+        selected_weights = gate_weights * mask
+        
+        # 使用 split 替代 getitem
+        weights_list = ops.split(selected_weights, axis=1)
+        
+        final_output = None
+        for i in range(self.num_experts):
+            expert_output = self.experts[i](x)
+            # w = selected_weights[:, i:i+1].broadcast_to(expert_output.shape)
+            w = weights_list[i].reshape((x.shape[0], 1)).broadcast_to(expert_output.shape)
+            if final_output is None:
+                final_output = expert_output * w
+            else:
+                final_output = final_output + expert_output * w
+        return final_output
+
+
+class ImportanceLoss(Module):
+    def __init__(self, w=0.01):
+        super().__init__()
+        self.w = w
+
+    def forward(self, gate_weights: Tensor) -> Tensor:
+        batch_size = gate_weights.shape[0]
+        importance = ops.summation(gate_weights, axes=(0,)) / batch_size
+        loss = ops.summation(importance * importance) * gate_weights.shape[1]
+        return loss * self.w
