@@ -1,11 +1,13 @@
 1.28
-* 切换backend `np` `nd`对比如下，说明上层的模型搭建没有问题，nan产生于算子上
-        <img src = "images/image copy 7.png" width = 400>
-* 成功以np为后端，使用MoE训练Mnist
-        <img src = "images/image copy 8.png" width = 400>
-* 以np为后端， 使用MLPResnet训练Mnist
-        <img src = "images/image copy 9.png" width = 400>
-
+* 使用MoE训练Mnist
+    * np为后端
+    <img src = "images/image copy 11.png" width = 400>
+* 使用MLPResnet训练Mnist
+    * np为后端
+    <img src = "images/image copy 10.png" width = 400>
+* 切换后端 `np` `nd`对比如下，说明上层的模型搭建没有问题
+    * 推测nan产生于BP期间
+    <img src = "images/image copy 7.png" width = 400>
 
 1.27
 * 排查过后， 发现如下问题：
